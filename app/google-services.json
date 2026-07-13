@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1037742382271",
+    "project_id": "frei-99cf8",
+    "storage_bucket": "frei-99cf8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037742382271:android:1d6d7cce6de5d93236fa0a",
+        "android_client_info": {
+          "package_name": "com.frei.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOKK89Mi6Ow47lmYe3CeIeJvuPVCUA3Ek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

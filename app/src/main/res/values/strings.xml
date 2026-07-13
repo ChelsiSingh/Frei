@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+<!-- ==================== APP ==================== -->
+<string name="app_name">Frei</string>
+<string name="app_tagline">From plans to memories</string>
+
+
+<!-- ==================== 01 · LOGIN / SIGNUP ==================== -->
+<string name="screen_title_auth">Create account</string>
+
+<!-- Form field labels -->
+<string name="label_first_name">First Name</string>
+<string name="label_last_name">Last Name</string>
+<string name="label_gender">Gender</string>
+<string name="label_contact">Contact</string>
+<string name="label_email">Email</string>
+<string name="label_address">Address</string>
+
+<!-- Gender options -->
+<string name="gender_female">Female</string>
+<string name="gender_male">Male</string>
+<string name="gender_other">Other</string>
+<string name="gender_prefer_not_to_say">Prefer not to say</string>
+
+<!-- Buttons -->
+<string name="btn_get_started">Get Started</string>
+<string name="btn_login">Login</string>
+
+<!-- Auth footer -->
+<string name="auth_already_have_account">Already have an account?</string>
+
+
+<!-- ==================== 02 · HOME ==================== -->
+
+<!-- Search card labels -->
+<string name="label_depart">Depart</string>
+<string name="label_return">Return</string>
+<string name="label_pax">Pax</string>
+
+<!-- Search card button -->
+<string name="btn_search_trips">Search trips</string>
+
+<!-- Suggestions section -->
+<string name="section_suggestions">Suggestions</string>
+<string name="action_see_all">See all</string>
+
+<!-- Quick-action grid -->
+<string name="action_new_trip">New Trip</string>
+<string name="action_packing">Packing</string>
+<string name="action_expenses">Expenses</string>
+<string name="action_booking">Booking</string>
+
+
+<!-- ==================== 03 · NOTIFICATIONS ==================== -->
+<string name="screen_title_notifications">Notifications</string>
+
+<!-- Section headers -->
+<string name="notif_section_today">Today</string>
+<string name="notif_section_earlier">Earlier</string>
+
+<!-- Notification titles -->
+<string name="notif_title_trip_soon">Trip to Bali starts soon</string>
+<string name="notif_title_flight_on_time">Flight 6E-2043 on time</string>
+<string name="notif_title_hotel_checkin">Hotel check-in reminder</string>
+<string name="notif_title_hotel_checkout">Hotel check-out reminder</string>
+
+<!-- Notification bodies -->
+<string name="notif_body_trip_soon">Your trip begins on 24 Jun. Time to pack!</string>
+<string name="notif_body_flight_on_time">Departs 24 Jun · 06:30 from BOM T2</string>
+<string name="notif_body_hotel_checkin">The Anvaya Resort · check-in from 14:00</string>
+<string name="notif_body_hotel_checkout">Check-out by 11:00 on 02 Jul</string>
+
+
+<!-- ==================== 04 · PROFILE ==================== -->
+<string name="screen_title_profile">Profile</string>
+
+<!-- Field label -->
+<string name="label_contact_number">Contact Number</string>
+
+<!-- Profile menu items -->
+<string name="profile_menu_previous_trips">Previous Trips</string>
+<string name="profile_menu_customer_support">Customer Support</string>
+<string name="profile_menu_about_app">About App</string>
+
+<!-- Button -->
+<string name="btn_edit_profile">Edit Profile</string>
+
+
+<!-- ==================== 05 · NEW TRIP ==================== -->
+<string name="screen_title_new_trip">New Trip</string>
+
+<!-- Form field labels -->
+<string name="label_trip_name">Trip Name</string>
+<string name="label_destination">Destination</string>
+<string name="label_departure">Departure</string>
+<string name="label_travelers">Travelers</string>
+<string name="label_budget">Budget (₹)</string>
+<string name="label_stay">Stay</string>
+
+<!-- Transportation section -->
+<string name="section_transportation">Transportation</string>
+<string name="transport_flight">Flight</string>
+<string name="transport_bus">Bus</string>
+<string name="transport_train">Train</string>
+
+<!-- Button -->
+<string name="btn_save_trip">Save Trip</string>
+
+
+<!-- ==================== 06 · PACKING LIST ==================== -->
+<string name="screen_title_packing">Packing</string>
+
+<!-- Progress card — use String.format() or plurals at runtime -->
+<string name="packing_progress">%1$d of %2$d items packed</string>
+
+<!-- Filter tabs -->
+<string name="packing_tab_all">All</string>
+<string name="packing_tab_clothes">Clothes</string>
+<string name="packing_tab_documents">Documents</string>
+<string name="packing_tab_meds">Meds</string>
+
+<!-- Category headers (inside the list) -->
+<string name="packing_category_clothes">Clothes</string>
+<string name="packing_category_documents">Documents</string>
+<string name="packing_category_electronics">Electronics</string>
+
+
+<!-- ==================== 07 · EXPENSES ==================== -->
+<string name="screen_title_expenses">Expenses</string>
+
+<!-- Budget summary labels -->
+<string name="label_total_budget">Total Budget</string>
+<string name="label_spent">Spent</string>
+<string name="label_remaining">Remaining</string>
+
+<!-- Expense category labels -->
+<string name="expense_category_flight">Flight</string>
+<string name="expense_category_hotel">Hotel</string>
+<string name="expense_category_food">Food</string>
+<string name="expense_category_transport">Transport</string>
+<string name="expense_category_activities">Activities</string>
+<string name="expense_category_shopping">Shopping</string>
+<string name="expense_category_other">Other</string>
+
+<!-- Button -->
+<string name="btn_add_expense">Add Expense</string>
+
+
+<!-- ==================== 08 · BOOKING ==================== -->
+<string name="screen_title_booking">Booking</string>
+
+<!-- Booking-type tabs -->
+<string name="booking_tab_flight">Flight</string>
+<string name="booking_tab_train">Train</string>
+<string name="booking_tab_bus">Bus</string>
+<string name="booking_tab_hotel">Hotel</string>
+
+<!-- Flight card labels -->
+<string name="flight_label_nonstop">Non-stop</string>
+
+<!-- Button -->
+<string name="btn_book">Book</string>
+
+
+<!-- ==================== BOTTOM NAVIGATION ==================== -->
+<string name="nav_home">Home</string>
+<string name="nav_booking">Booking</string>
+<string name="nav_trips">Trips</string>
+<string name="nav_packing">Packing</string>
+<string name="nav_profile">Profile</string>
+
+
+<!-- ==================== COMMON / SHARED ==================== -->
+<string name="btn_back">Back</string>
+<string name="label_settings">Settings</string>
+<string name="label_loading">Loading\u2026</string>
+<string name="label_error_generic">Something went wrong. Please try again.</string>
+<string name="label_no_results">No results found.</string>
+
+</resources>
