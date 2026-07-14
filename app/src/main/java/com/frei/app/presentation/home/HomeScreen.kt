@@ -40,7 +40,7 @@ fun HomeScreen(
                 onItemSelected = { index ->
                     when (index) {
                         0 -> { /* Already home */ }
-                        1 -> { /* Booking tab logic */ }
+                        1 -> navController.navigate(Screen.Bookings.route)
                         2 -> onTripsClick()
                     }
                 }
@@ -89,8 +89,6 @@ fun HomeScreen(
             item {
                 QuickActionGrid(
                     onAddTripClick = onAddTripClick,
-                    onBookingsClick = { /* No longer needed globally, or define specific logic */ },
-                    onPackingClick = onPackingClick,
                     onExpensesClick = { navController.navigate(Screen.Expenses.route) }
                 )
             }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -182,43 +183,42 @@ fun BookingsScreen(
             )
 
             Box(modifier = Modifier.fillMaxSize()) {
-                when {
-                    uiState.isLoading -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center),
-                            color = FreiPurple
-                        )
-                    }
-                    uiState.errorMessage != null -> {
-                        Text(
-                            text = uiState.errorMessage.orEmpty(),
-                            color = FreiMuted,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.align(Alignment.Center).padding(32.dp)
-                        )
-                    }
-                    else -> {
-                        HorizontalPager(
-                            state = pagerState,
-                            modifier = Modifier.fillMaxSize()
-                        ) { page ->
-                            if (page == 0) {
-                                FlightsTabContent(
-                                    bookings = uiState.flightBookings,
-                                    filter = selectedFilter,
-                                    onBoardingPassClick = onBoardingPassClick,
-                                    onInvoiceClick = onFlightInvoiceClick,
-                                    onSearchFlightsClick = onSearchFlightsClick
-                                )
-                            } else {
-                                HotelsTabContent(
-                                    bookings = uiState.hotelBookings,
-                                    filter = selectedFilter,
-                                    onViewBookingClick = onViewHotelBookingClick,
-                                    onInvoiceClick = onHotelInvoiceClick,
-                                    onSearchHotelsClick = onSearchHotelsClick
-                                )
-                            }
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
+                    when {
+                        uiState.isLoading -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center),
+                                color = FreiPurple
+                            )
+                        }
+                        uiState.errorMessage != null -> {
+                            Text(
+                                text = uiState.errorMessage.orEmpty(),
+                                color = FreiMuted,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center).padding(32.dp)
+                            )
+                        }
+                        page == 0 -> {
+                            FlightsTabContent(
+                                bookings = uiState.flightBookings,
+                                filter = selectedFilter,
+                                onBoardingPassClick = onBoardingPassClick,
+                                onInvoiceClick = onFlightInvoiceClick,
+                                onSearchFlightsClick = onSearchFlightsClick
+                            )
+                        }
+                        else -> {
+                            HotelsTabContent(
+                                bookings = uiState.hotelBookings,
+                                filter = selectedFilter,
+                                onViewBookingClick = onViewHotelBookingClick,
+                                onInvoiceClick = onHotelInvoiceClick,
+                                onSearchHotelsClick = onSearchHotelsClick
+                            )
                         }
                     }
                 }
@@ -666,7 +666,7 @@ private fun TextLinkButton(label: String, onClick: () -> Unit) {
 }
 
 private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
-    this.then(clickable(onClick = onClick))
+    this.then(Modifier.clickable(onClick = onClick))
 
 @Composable
 private fun EmptyBookingsState(

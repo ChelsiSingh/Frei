@@ -1,6 +1,8 @@
 package com.frei.app.navigation
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -25,11 +27,13 @@ import com.frei.app.presentation.booking.payment.HotelConfirmPayViewModel
 import com.frei.app.presentation.booking.seat.SeatSelectionScreen
 import com.frei.app.presentation.booking.seat.SeatSelectionViewModel
 import com.frei.app.presentation.home.HomeScreen
+import com.frei.app.presentation.mybookings.BookingsScreen
 import com.frei.app.presentation.mytrips.MyTripScreen
 import com.frei.app.presentation.mytrips.TripsDashboardScreen
 import com.frei.app.presentation.newtrip.NewTripScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
+import com.frei.app.presentation.profile.ProfileScreen
 
 @Composable
 fun FreiNavGraph() {
@@ -135,7 +139,19 @@ fun FreiNavGraph() {
         }
 
         composable(Screen.Profile.route) {
-            // Profile screen placeholder destination
+            val ctx = LocalContext.current
+            ProfileScreen(
+                onSettingsClick = { Toast.makeText(ctx, "Settings — coming soon", Toast.LENGTH_SHORT).show()  },
+                onPreviousTripsClick = { navController.navigate(Screen.TripsDashboard.route) }, // real screen, already exists
+                onCustomerSupportClick = { Toast.makeText(ctx, "Customer Support — coming soon", Toast.LENGTH_SHORT).show() },
+                onAboutAppClick = { Toast.makeText(ctx, "About App — coming soon", Toast.LENGTH_SHORT).show() },
+                onEditProfileClick = { Toast.makeText(ctx, "Edit Profile — coming soon", Toast.LENGTH_SHORT).show() },
+                onSignedOut = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true } // clear entire back stack
+                    }
+                }
+            )
         }
 
         composable(
@@ -310,6 +326,28 @@ fun FreiNavGraph() {
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onDone = { navController.popBackStack(Screen.Home.route, inclusive = false) }
+            )
+        }
+
+        composable(Screen.Bookings.route) {
+            BookingsScreen(
+                onBackClick = { navController.popBackStack() },
+                onBoardingPassClick = { booking ->
+                    // TODO: navigate to a real boarding-pass screen once it exists
+                    // navController.navigate("boarding_pass/${booking.flightId}")
+                },
+                onFlightInvoiceClick = { booking ->
+                    // TODO: navigate to a real invoice screen once it exists
+                },
+                onViewHotelBookingClick = { booking ->
+                    navController.navigate(Screen.HotelDetails.createRoute(booking.hotelId))
+                },
+                onHotelInvoiceClick = { booking ->
+                    // TODO: navigate to a real invoice screen once it exists
+                },
+                onSearchFlightsClick = {
+                    navController.popBackStack(Screen.Home.route, inclusive = false)
+                }
             )
         }
     }

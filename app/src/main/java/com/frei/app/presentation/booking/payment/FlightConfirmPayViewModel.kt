@@ -77,7 +77,7 @@ class FlightConfirmPayViewModel @Inject constructor(
             flightRepository.getFlight(flightId)
                 .onSuccess { flight ->
                     val baseFare = flight.price * travelers
-                    val taxesAndFees = baseFare * TAX_RATE
+                    val taxesAndFees = TAX_RATE
                     val total = baseFare + taxesAndFees + seatPrice
                     _uiState.value = PaymentUiState.Ready(flight, baseFare, taxesAndFees, seatPrice, total)
                 }
@@ -88,7 +88,7 @@ class FlightConfirmPayViewModel @Inject constructor(
     }
 
     companion object {
-        private const val TAX_RATE = 0.12
+        private const val TAX_RATE = 0.1
     }
 
     fun createOrder(onOrderReady: (orderId: String, keyId: String, amountPaise: Int) -> Unit) {

@@ -27,7 +27,7 @@ fun FreiBottomBar(
 
     val items = listOf(
         BottomNavItem("Home", Icons.Default.Home),
-        BottomNavItem("Booking", Icons.Outlined.Flight),
+        BottomNavItem("Bookings", Icons.Outlined.Flight),
         BottomNavItem("Trips", Icons.Outlined.Luggage),
         BottomNavItem("Profile", Icons.Outlined.Person)
     )

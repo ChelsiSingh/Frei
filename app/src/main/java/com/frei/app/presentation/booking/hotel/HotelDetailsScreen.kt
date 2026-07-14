@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AcUnit
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Fastfood
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.LocationOn
@@ -233,5 +234,6 @@ private fun amenityIcon(amenity: String): ImageVector = when {
     amenity.contains("parking", ignoreCase = true) -> Icons.Default.LocalParking
     amenity.contains("spa", ignoreCase = true) -> Icons.Default.Spa
     amenity.contains("ac", ignoreCase = true) || amenity.contains("air conditioning", ignoreCase = true) -> Icons.Default.AcUnit
+    amenity.contains("Breakfast", ignoreCase = true) -> Icons.Default.Fastfood
     else -> Icons.Default.CheckCircle
 }
