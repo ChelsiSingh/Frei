@@ -56,6 +56,7 @@ class RazorpayPaymentManager @Inject constructor() {
 
     // Called from MainActivity's PaymentResultWithDataListener callbacks
     fun onPaymentSuccess(paymentId: String, paymentData: PaymentData?) {
+        android.util.Log.d("RazorpayDebug", "paymentId=$paymentId orderId=${paymentData?.orderId} signature=${paymentData?.signature}")
         _results.tryEmit(
             RazorpayResult.Success(
                 paymentId = paymentId,

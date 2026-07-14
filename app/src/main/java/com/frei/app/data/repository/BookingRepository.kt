@@ -1,6 +1,7 @@
 package com.frei.app.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
@@ -12,14 +13,23 @@ data class FlightBookingRecord(
     val flightId: String = "",
     val travelers: Int = 1,
     val totalPrice: Double = 0.0,
+    val currency: String = "",
     val guestName: String = "",
     val guestEmail: String = "",
     val guestPhone: String = "",
     val seatNumber: String = "",
     val seatClass: String = "",
+    // Denormalized flight details so the Bookings list doesn't need a join back to /flightDetails-search per row
+    val airline: String = "",
+    val airlineCode: String = "",
+    val flightNumber: String = "",
+    val fromAirport: String = "",
+    val toAirport: String = "",
+    val departureTime: String = "", // raw ISO string from Flight.departureTime, e.g. 2026-07-24T15:45:00.000Z
+    val arrivalTime: String = "",
     val razorpayOrderId: String = "",
     val razorpayPaymentId: String = "",
-    val bookedAt: Long = System.currentTimeMillis()
+    val bookedAt: Long = System.currentTimeMillis() // when the booking/payment was made
 )
 
 data class HotelBookingRecord(
@@ -28,6 +38,7 @@ data class HotelBookingRecord(
     val hotelId: String = "",
     val guests: Int = 1,
     val totalPrice: Double = 0.0,
+    val currency: String = "",
     val guestName: String = "",
     val guestEmail: String = "",
     val guestPhone: String = "",
@@ -35,6 +46,11 @@ data class HotelBookingRecord(
     val checkInDate: String = "",
     val checkOutDate: String = "",
     val roomType: String = "",
+    // Denormalized hotel details for the Bookings list
+    val hotelName: String = "",
+    val cityId: String = "",
+    val address: String = "",
+    val image: String? = null,
     val razorpayOrderId: String = "",
     val razorpayPaymentId: String = "",
     val bookedAt: Long = System.currentTimeMillis()
@@ -44,6 +60,8 @@ interface BookingRepository {
     suspend fun getOrCreateTripId(uid: String): Result<String>
     suspend fun saveFlightBooking(record: FlightBookingRecord): Result<Unit>
     suspend fun saveHotelBooking(record: HotelBookingRecord): Result<Unit>
+    suspend fun getFlightBookings(uid: String): Result<List<FlightBookingRecord>>
+    suspend fun getHotelBookings(uid: String): Result<List<HotelBookingRecord>>
 }
 
 class BookingRepositoryImpl @Inject constructor(
@@ -69,5 +87,23 @@ class BookingRepositoryImpl @Inject constructor(
     override suspend fun saveHotelBooking(record: HotelBookingRecord): Result<Unit> = runCatching {
         firestore.collection("hotelDetails").add(record).await()
         Unit
+    }
+
+    override suspend fun getFlightBookings(uid: String): Result<List<FlightBookingRecord>> = runCatching {
+        firestore.collection("flightDetails")
+            .whereEqualTo("uid", uid)
+            .orderBy("bookedAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+            .toObjects(FlightBookingRecord::class.java)
+    }
+
+    override suspend fun getHotelBookings(uid: String): Result<List<HotelBookingRecord>> = runCatching {
+        firestore.collection("hotelDetails")
+            .whereEqualTo("uid", uid)
+            .orderBy("bookedAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+            .toObjects(HotelBookingRecord::class.java)
     }
 }

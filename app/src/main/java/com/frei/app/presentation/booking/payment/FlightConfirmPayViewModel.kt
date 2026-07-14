@@ -88,7 +88,6 @@ class FlightConfirmPayViewModel @Inject constructor(
     }
 
     companion object {
-        // Placeholder rate — swap for a real tax figure if/when your backend returns one.
         private const val TAX_RATE = 0.12
     }
 
@@ -130,7 +129,9 @@ class FlightConfirmPayViewModel @Inject constructor(
             )
             return
         }
-        val totalPrice = (_uiState.value as? PaymentUiState.Ready)?.totalPrice ?: 0.0
+        val readyState = _uiState.value as? PaymentUiState.Ready
+        val totalPrice = readyState?.totalPrice ?: 0.0
+        val flight = readyState?.flight
 
         bookingRepository.getOrCreateTripId(uid)
             .mapCatching { tripId ->
@@ -141,11 +142,19 @@ class FlightConfirmPayViewModel @Inject constructor(
                         flightId = flightId,
                         travelers = travelers,
                         totalPrice = totalPrice,
+                        currency = flight?.currency ?: "",
                         guestName = guestName,
                         guestEmail = guestEmail,
                         guestPhone = guestPhone,
                         seatNumber = seatNumber,
                         seatClass = seatClass,
+                        airline = flight?.airline ?: "",
+                        airlineCode = flight?.airlineCode ?: "",
+                        flightNumber = flight?.flightNumber ?: "",
+                        fromAirport = flight?.fromAirport ?: "",
+                        toAirport = flight?.toAirport ?: "",
+                        departureTime = flight?.departureTime ?: "",
+                        arrivalTime = flight?.arrivalTime ?: "",
                         razorpayOrderId = result.orderId,
                         razorpayPaymentId = result.paymentId
                     )

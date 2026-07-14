@@ -117,7 +117,9 @@ class HotelConfirmPayViewModel @Inject constructor(
             )
             return
         }
-        val totalPrice = (_uiState.value as? HotelPaymentUiState.Ready)?.totalPrice ?: 0.0
+        val readyState = _uiState.value as? HotelPaymentUiState.Ready
+        val totalPrice = readyState?.totalPrice ?: 0.0
+        val hotel = readyState?.hotel
 
         bookingRepository.getOrCreateTripId(uid)
             .mapCatching { tripId ->
@@ -128,6 +130,7 @@ class HotelConfirmPayViewModel @Inject constructor(
                         hotelId = hotelId,
                         guests = guests,
                         totalPrice = totalPrice,
+                        currency = hotel?.currency ?: "",
                         guestName = guestName,
                         guestEmail = guestEmail,
                         guestPhone = guestPhone,
@@ -135,6 +138,10 @@ class HotelConfirmPayViewModel @Inject constructor(
                         checkInDate = checkInDate,
                         checkOutDate = checkOutDate,
                         roomType = roomType,
+                        hotelName = hotel?.name ?: "",
+                        cityId = hotel?.cityId ?: "",
+                        address = hotel?.address ?: "",
+                        image = hotel?.image,
                         razorpayOrderId = result.orderId,
                         razorpayPaymentId = result.paymentId
                     )
