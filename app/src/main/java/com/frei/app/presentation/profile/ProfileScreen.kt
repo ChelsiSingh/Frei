@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
@@ -55,6 +56,7 @@ private val FreiDanger = Color(0xFFE0463D)
 
 @Composable
 fun ProfileScreen(
+    onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onPreviousTripsClick: () -> Unit,
     onCustomerSupportClick: () -> Unit,
@@ -94,18 +96,29 @@ fun ProfileScreen(
                     .padding(top = 8.dp, bottom = 52.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier
+                            .align(Alignment.CenterStart)
+                            .padding(8.dp)
+                            .size(38.dp)
+                            .background(Color.White.copy(alpha = 0.18f), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
                     Text(
                         text = "Profile",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
+                        color = Color.White,
+                        modifier = Modifier.align(Alignment.Center)
                     )
-                    IconButton(onClick = onSettingsClick) {
+                    IconButton(
+                        onClick = onSettingsClick,
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
                         Icon(Icons.Default.Settings, contentDescription = "Settings", tint = Color.White)
                     }
                 }

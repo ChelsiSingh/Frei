@@ -142,13 +142,14 @@ fun FreiNavGraph() {
             val ctx = LocalContext.current
             ProfileScreen(
                 onSettingsClick = { Toast.makeText(ctx, "Settings — coming soon", Toast.LENGTH_SHORT).show()  },
-                onPreviousTripsClick = { navController.navigate(Screen.TripsDashboard.route) }, // real screen, already exists
+                onPreviousTripsClick = { navController.navigate(Screen.TripsDashboard.route) },
                 onCustomerSupportClick = { Toast.makeText(ctx, "Customer Support — coming soon", Toast.LENGTH_SHORT).show() },
                 onAboutAppClick = { Toast.makeText(ctx, "About App — coming soon", Toast.LENGTH_SHORT).show() },
                 onEditProfileClick = { Toast.makeText(ctx, "Edit Profile — coming soon", Toast.LENGTH_SHORT).show() },
+                onBackClick = { navController.popBackStack() },
                 onSignedOut = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true } // clear entire back stack
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -169,7 +170,7 @@ fun FreiNavGraph() {
             FlightListScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
-                onEditSearchClick = { navController.popBackStack() }, // back to Home to adjust search
+                onEditSearchClick = { navController.popBackStack() },
                 onBookFlight = { flight ->
                     navController.navigate(Screen.BookingDetails.createRoute(flight.id))
                 }

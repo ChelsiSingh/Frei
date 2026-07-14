@@ -42,6 +42,7 @@ fun HomeScreen(
                         0 -> { /* Already home */ }
                         1 -> navController.navigate(Screen.Bookings.route)
                         2 -> onTripsClick()
+                        3 -> navController.navigate(Screen.Profile.route)
                     }
                 }
             )
