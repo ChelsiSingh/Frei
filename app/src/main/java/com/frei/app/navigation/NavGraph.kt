@@ -146,9 +146,10 @@ fun FreiNavGraph() {
                 onCustomerSupportClick = { Toast.makeText(ctx, "Customer Support — coming soon", Toast.LENGTH_SHORT).show() },
                 onAboutAppClick = { Toast.makeText(ctx, "About App — coming soon", Toast.LENGTH_SHORT).show() },
                 onEditProfileClick = { Toast.makeText(ctx, "Edit Profile — coming soon", Toast.LENGTH_SHORT).show() },
+                onBackClick = { navController.popBackStack() },
                 onSignedOut = {
                     navController.navigate(Screen.Login.route) {
-                        popUpTo(0) { inclusive = true } // clear entire back stack
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
