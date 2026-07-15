@@ -1,7 +1,7 @@
 package com.frei.app.data.remote.api
 
-import com.frei.app.data.model.hotel.HotelSearchResponse
 import com.frei.app.data.model.hotel.Hotel
+import com.frei.app.data.model.hotel.HotelSearchResponse
 import com.frei.app.data.remote.FreiApiPaths
 import retrofit2.Response
 import retrofit2.http.GET
@@ -20,4 +20,9 @@ interface HotelApiService {
 
     @GET(FreiApiPaths.HOTEL_BY_ID)
     suspend fun getHotel(@Path("hotelId") hotelId: String): Response<Hotel>
+
+    @GET(FreiApiPaths.RECOMMENDED_HOTELS)
+    suspend fun getRecommendedHotels(
+        @Query("cityId") cityId: String? = null
+    ): Response<HotelSearchResponse>
 }

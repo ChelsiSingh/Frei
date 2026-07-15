@@ -17,6 +17,7 @@ object FreiApiPaths {
     // TODO: wire up once Hotel/Attraction/Booking/NewBooking schemas are shared
     const val HOTELS = "hotels"
     const val HOTEL_BY_ID = "hotels/{hotelId}"
+    const val RECOMMENDED_HOTELS = "hotels/recommended"
 
     const val BOOKINGS = "bookings"
     const val BOOKING_BY_ID = "bookings/{bookingId}"

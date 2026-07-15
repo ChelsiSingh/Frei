@@ -2,7 +2,6 @@ package com.frei.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val FreiPurple = Color(0xFF6C3FCF)
 val PurpleGradient = Color(0xFF5A2EB8)
 val FreiTeal = Color(0xFF14B8A6)
 val Mint = Color(0xFFCFF3EC)

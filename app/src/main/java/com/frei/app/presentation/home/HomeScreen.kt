@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -18,18 +18,19 @@ import com.frei.app.presentation.booking.hotel.HotelViewModel
 import com.frei.app.presentation.home.components.FreiBottomBar
 import com.frei.app.presentation.home.components.HomeTopBar
 import com.frei.app.presentation.home.components.QuickActionGrid
-import com.frei.app.presentation.home.components.SuggestionSection
+import com.frei.app.presentation.home.components.RecommendedHotelsSection
 import com.frei.app.presentation.home.components.TripSearchSection
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun HomeScreen(
     navController: NavController,
-    onAddTripClick: () -> Unit,
     onTripsClick: () -> Unit,
+    onExpensesClick: () -> Unit,
+    onNewTripClick: () -> Unit,
     onPackingClick: () -> Unit,
-    homeViewModel: HomeViewModel = hiltViewModel(),
     flightViewModel: FlightViewModel = hiltViewModel(),
     hotelViewModel: HotelViewModel = hiltViewModel()
 ) {
@@ -41,8 +42,10 @@ fun HomeScreen(
                     when (index) {
                         0 -> { /* Already home */ }
                         1 -> navController.navigate(Screen.Bookings.route)
-                        2 -> onTripsClick()
+                        2 -> navController.navigate(Screen.TripsDashboard.route)
                         3 -> navController.navigate(Screen.Profile.route)
+                        4 -> navController.navigate(Screen.NewTrip.route)
+                        5 -> navController.navigate("packing_dashboard") { launchSingleTop = true }
                     }
                 }
             )
@@ -50,12 +53,13 @@ fun HomeScreen(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 100.dp),
+            // Narrower side padding than before (14dp) — matches the mockup's wider content area.
+            contentPadding = PaddingValues(start = 14.dp, top = 40.dp, end = 14.dp, bottom = 150.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item { HomeTopBar() }
             item {
-                val formatter = SimpleDateFormat("yyyy-MM-dd", LocalLocale.current.platformLocale)
+                val formatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
                 TripSearchSection(
                     flightViewModel = flightViewModel,
@@ -86,11 +90,17 @@ fun HomeScreen(
                     }
                 )
             }
-            item { SuggestionSection() }
             item {
                 QuickActionGrid(
-                    onAddTripClick = onAddTripClick,
-                    onExpensesClick = { navController.navigate(Screen.Expenses.route) }
+                    onNewTripClick = onNewTripClick,
+                    onExpensesClick = onExpensesClick
+                )
+            }
+            item {
+                    RecommendedHotelsSection(
+                    onHotelClick = { hotelId ->
+                        navController.navigate(Screen.HotelDetails.createRoute(hotelId))
+                    }
                 )
             }
         }

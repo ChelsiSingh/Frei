@@ -76,8 +76,8 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
 
     // Room
-    implementation("androidx.room:room-ktx:2.7.2")
     implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
     // Coroutines
@@ -120,9 +120,8 @@ dependencies {
     implementation(libs.okhttp.logging.interceptor)
 
     // Jetpack Compose Framework
-    val composeBom = platform("androidx.compose:compose-bom:2025.02.00")
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
+    implementation(platform(libs.compose.bom))
+    androidTestImplementation(platform(libs.compose.bom))
 
     implementation(libs.ui.tooling.preview)
     implementation(libs.activity.compose)

@@ -66,7 +66,7 @@ private val MethodSelectedBg = Color(0xFFF5F2FC)
 private val DiscountGreen = Color(0xFF1EA672)
 
 public enum class PaymentMethod(val label: String, val razorpayValue: String) {
-    UPI("UPI", "upi"),
+    WALLET("Wallet", "wallet"),
     CARD("Card", "card"),
     NET_BANKING("Net Banking", "netbanking")
 }
@@ -80,7 +80,7 @@ fun HotelConfirmPayScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val activity = LocalActivity.current as Activity
-    var selectedMethod by remember { mutableStateOf(PaymentMethod.UPI) }
+    var selectedMethod by remember { mutableStateOf(PaymentMethod.WALLET) }
 
     Scaffold(
         topBar = {
@@ -139,7 +139,7 @@ fun HotelConfirmPayScreen(
                             Spacer(Modifier.height(16.dp))
                             Text("Payment Method", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = FreiInk)
                             Spacer(Modifier.height(8.dp))
-                            PaymentMethodRow(PaymentMethod.UPI, Icons.Default.AccountBalanceWallet, selectedMethod) { selectedMethod = it }
+                            PaymentMethodRow(PaymentMethod.WALLET, Icons.Default.AccountBalanceWallet, selectedMethod) { selectedMethod = it }
                             Spacer(Modifier.height(8.dp))
                             PaymentMethodRow(PaymentMethod.CARD, Icons.Default.CreditCard, selectedMethod) { selectedMethod = it }
                             Spacer(Modifier.height(8.dp))

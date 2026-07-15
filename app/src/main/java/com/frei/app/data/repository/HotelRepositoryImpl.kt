@@ -26,4 +26,8 @@ class HotelRepositoryImpl @Inject constructor(
     override suspend fun getHotel(hotelId: String): Result<Hotel> = runCatching {
         api.getHotel(hotelId).getOrThrow()
     }
+
+    override suspend fun getRecommendedHotels(cityId: String?): Result<HotelSearchResponse> = runCatching {
+        api.getRecommendedHotels(cityId).getOrThrow()
+    }
 }

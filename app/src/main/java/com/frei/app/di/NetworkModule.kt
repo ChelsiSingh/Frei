@@ -2,6 +2,7 @@ package com.frei.app.di
 
 import com.frei.app.BuildConfig
 import com.frei.app.data.remote.FlightRemoteDataSource
+import com.frei.app.data.remote.FreiApiPaths
 import com.frei.app.data.remote.api.CityApiService
 import com.frei.app.data.remote.api.FlightApiService
 import com.frei.app.data.remote.api.HotelApiService
@@ -17,25 +18,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
-
-object FreiApiPaths {
-    const val BASE_URL = "https://frei.onrender.com/"
-
-    const val CITIES = "cities"
-    const val CITY_BY_ID = "cities/{cityId}"
-    const val CITY_HOTELS = "cities/{cityId}/hotels"
-    const val CITY_ATTRACTIONS = "cities/{cityId}/attractions"
-
-    const val AIRPORTS = "airports"
-    const val AIRPORT_BY_CODE = "airports/{code}"
-
-    const val FLIGHTS = "flights"
-    const val FLIGHT_BY_ID = "flights/{flightId}"
-
-    const val HOTEL_BY_ID = "hotels/{hotelId}"
-    const val BOOKINGS = "bookings"
-    const val BOOKING_BY_ID = "bookings/{bookingId}"
-}
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -96,6 +78,6 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun providePaymentApiService(freiRetrofit: Retrofit): PaymentApiService =
-        freiRetrofit.create(PaymentApiService::class.java)
+    fun providePaymentApiService(retrofit: Retrofit): PaymentApiService =
+        retrofit.create(PaymentApiService::class.java)
 }

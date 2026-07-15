@@ -41,7 +41,7 @@ fun FreiNavGraph() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Login.route
+        startDestination = Screen.Home.route
     ) {
         composable(Screen.Login.route) {
             LoginScreen(
@@ -68,9 +68,12 @@ fun FreiNavGraph() {
         composable(Screen.Home.route) {
             HomeScreen(
                 navController = navController,
-                onAddTripClick = { navController.navigate(Screen.NewTrip.route) },
+                onNewTripClick = {
+                    navController.navigate(Screen.NewTrip.route)
+                },
                 onPackingClick = { navController.navigate("packing_dashboard") { launchSingleTop = true } },
-                onTripsClick = { navController.navigate(Screen.TripsDashboard.route) }
+                onTripsClick = { navController.navigate(Screen.TripsDashboard.route) },
+                onExpensesClick = { navController.navigate(Screen.Expenses.route) }
             )
         }
 
@@ -80,7 +83,6 @@ fun FreiNavGraph() {
                     navController.popBackStack()
                 },
                 onSaveSuccess = { _ ->
-                    // Navigate back to home or directly to a flight list if preferred
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.NewTrip.route) { inclusive = true }
                     }

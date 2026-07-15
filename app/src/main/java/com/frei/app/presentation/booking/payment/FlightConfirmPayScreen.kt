@@ -74,7 +74,7 @@ fun FlightConfirmPayScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val activity = LocalActivity.current as Activity
-    var selectedMethod by remember { mutableStateOf(PaymentMethod.UPI) }
+    var selectedMethod by remember { mutableStateOf(PaymentMethod.WALLET) }
 
     Scaffold(
         topBar = {
@@ -126,7 +126,7 @@ fun FlightConfirmPayScreen(
                             Spacer(Modifier.height(16.dp))
                             Text("Payment Method", fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = FreiInk)
                             Spacer(Modifier.height(8.dp))
-                            PaymentMethodRow(PaymentMethod.UPI, Icons.Default.AccountBalanceWallet, selectedMethod) { selectedMethod = it }
+                            PaymentMethodRow(PaymentMethod.WALLET, Icons.Default.AccountBalanceWallet, selectedMethod) { selectedMethod = it }
                             Spacer(Modifier.height(8.dp))
                             PaymentMethodRow(PaymentMethod.CARD, Icons.Default.CreditCard, selectedMethod) { selectedMethod = it }
                             Spacer(Modifier.height(8.dp))
