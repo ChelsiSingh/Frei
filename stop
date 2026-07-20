@@ -1,0 +1,136 @@
+[1mdiff --git a/app/src/main/java/com/frei/app/navigation/NavGraph.kt b/app/src/main/java/com/frei/app/navigation/NavGraph.kt[m
+[1mindex b6e2ca0..303fed8 100644[m
+[1m--- a/app/src/main/java/com/frei/app/navigation/NavGraph.kt[m
+[1m+++ b/app/src/main/java/com/frei/app/navigation/NavGraph.kt[m
+[36m@@ -2,6 +2,7 @@[m [mpackage com.frei.app.navigation[m
+ [m
+ import android.widget.Toast[m
+ import androidx.compose.runtime.Composable[m
+[32m+[m[32mimport androidx.compose.runtime.getValue[m
+ import androidx.compose.ui.platform.LocalContext[m
+ import androidx.hilt.navigation.compose.hiltViewModel[m
+ import androidx.lifecycle.compose.collectAsStateWithLifecycle[m
+[36m@@ -44,7 +45,7 @@[m [mimport com.frei.app.presentation.newtrip.NewTripScreen[m
+ import com.frei.app.presentation.packing.PackingDashboardScreen[m
+ import com.frei.app.presentation.packing.PackingScreen[m
+ import com.frei.app.presentation.profile.ProfileScreen[m
+[31m-import androidx.compose.runtime.getValue[m
+[32m+[m
+ [m
+ @Composable[m
+ fun FreiNavGraph() {[m
+[36m@@ -76,9 +77,16 @@[m [mfun FreiNavGraph() {[m
+             )[m
+         }[m
+ [m
+[31m-        composable(Screen.Home.route) {[m
+[32m+[m[32m        composable([m
+[32m+[m[32m            route = Screen.Home.route,[m
+[32m+[m[32m            arguments = listOf([m
+[32m+[m[32m                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+[32m+[m[32m            )[m
+[32m+[m[32m        ) { backStackEntry ->[m
+[32m+[m[32m            val tripId = backStackEntry.arguments?.getString("tripId")[m
+             HomeScreen([m
+                 navController = navController,[m
+[32m+[m[32m                tripId = tripId,[m
+                 onNewTripClick = {[m
+                     navController.navigate(Screen.NewTrip.route)[m
+                 },[m
+[36m@@ -193,31 +201,37 @@[m [mfun FreiNavGraph() {[m
+                 navArgument("depart_date") { type = NavType.StringType },[m
+                 navArgument("pax_count") { type = NavType.IntType },[m
+                 navArgument("is_round_trip") { type = NavType.BoolType },[m
+[31m-                navArgument("return_date") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+[32m+[m[32m                navArgument("return_date") { type = NavType.StringType; nullable = true; defaultValue = null },[m
+[32m+[m[32m                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+             )[m
+[31m-        ) {[m
+[32m+[m[32m        ) { backStackEntry ->[m
+[32m+[m[32m            val tripId = backStackEntry.arguments?.getString("tripId")[m
+             val viewModel: FlightListViewModel = hiltViewModel()[m
+             FlightListScreen([m
+                 viewModel = viewModel,[m
+                 onBackClick = { navController.popBackStack() },[m
+                 onEditSearchClick = { navController.popBackStack() },[m
+                 onBookFlight = { flight ->[m
+[31m-                    navController.navigate(Screen.BookingDetails.createRoute(flight.id))[m
+[32m+[m[32m                    navController.navigate(Screen.BookingDetails.createRoute(flight.id, tripId))[m
+                 }[m
+             )[m
+         }[m
+ [m
+         composable([m
+             route = Screen.BookingDetails.route,[m
+[31m-            arguments = listOf(navArgument("flightId") { type = NavType.StringType })[m
+[31m-        ) {[m
+[32m+[m[32m            arguments = listOf([m
+[32m+[m[32m                navArgument("flightId") { type = NavType.StringType },[m
+[32m+[m[32m                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+[32m+[m[32m            )[m
+[32m+[m[32m        ) { backStackEntry ->[m
+[32m+[m[32m            val tripId = backStackEntry.arguments?.getString("tripId")[m
+             val viewModel: BookingDetailsViewModel = hiltViewModel()[m
+             BookingDetailsScreen([m
+                 viewModel = viewModel,[m
+                 onBackClick = { navController.popBackStack() },[m
+                 onSelectSeatClick = { flightId, travelers, name, email, mobile ->[m
+                     navController.navigate([m
+[31m-                        Screen.SeatSelection.createRoute(flightId, travelers, name, email, mobile)[m
+[32m+[m[32m                        Screen.SeatSelection.createRoute(flightId, travelers, name, email, mobile, tripId)[m
+                     )[m
+                 }[m
+             )[m
+[36m@@ -230,7 +244,8 @@[m [mfun FreiNavGraph() {[m
+                 navArgument("travelers") { type = NavType.StringType; defaultValue = "1" },[m
+                 navArgument("name") { type = NavType.StringType; defaultValue = "" },[m
+                 navArgument("email") { type = NavType.StringType; defaultValue = "" },[m
+[31m-                navArgument("phone") { type = NavType.StringType; defaultValue = "" }[m
+[32m+[m[32m                navArgument("phone") { type = NavType.StringType; defaultValue = "" },[m
+[32m+[m[32m                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+             )[m
+         ) { backStackEntry ->[m
+             val flightId = backStackEntry.arguments?.getString("flightId").orEmpty()[m
+[36m@@ -238,6 +253,7 @@[m [mfun FreiNavGraph() {[m
+             val name = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("name").orEmpty(), "UTF-8")[m
+             val email = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("email").orEmpty(), "UTF-8")[m
+             val phone = backStackEntry.arguments?.getString("phone").orEmpty()[m
+[32m+[m[32m            val tripId = backStackEntry.arguments?.getString("tripId")[m
+ [m
+             val viewModel: SeatSelectionViewModel = hiltViewModel()[m
+             SeatSelectionScreen([m
+[36m@@ -246,14 +262,9 @@[m [mfun FreiNavGraph() {[m
+                 onContinue = { seat ->[m
+                     navController.navigate([m
+                         Screen.FlightConfirmPay.createRoute([m
+[31m-                            flightId = flightId,[m
+[31m-                            travelers = travelers,[m
+[31m-                            name = name,[m
+[31m-                            email = email,[m
+[31m-                            phone = phone,[m
+[31m-                            seat = seat.seatNumber,[m
+[31m-                            seatClass = seat.seatClass.name,[m
+[31m-                            seatPrice = seat.extraPrice[m
+[32m+[m[32m                            flightId = flightId, travelers = travelers, name = name, email = email, phone = phone,[m
+[32m+[m[32m                            seat = seat.seatNumber, seatClass = seat.seatClass.name, seatPrice = seat.extraPrice,[m
+[32m+[m[32m                            tripId = tripId[m
+                         )[m
+                     )[m
+                 }[m
+[36m@@ -265,37 +276,47 @@[m [mfun FreiNavGraph() {[m
+             arguments = listOf([m
+                 navArgument("city_id") { type = NavType.StringType },[m
+                 navArgument("city_name") { type = NavType.StringType },[m
+[31m-                navArgument("min_stars") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+[32m+[m[32m                navArgument("min_stars") { type = NavType.StringType; nullable = true; defaultValue = null },[m
+[32m+[m[32m                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }[m
+             )[m
+[31m-        ) {[m
+[32m+[m[32m        ) { backStackEntry ->[m
+[32m+[m[32m            val tripId = backStackEntry.arguments?.getString("tripId")[m
+             val viewModel: HotelListViewModel = hiltViewModel()[m
+             HotelListScreen([m
+                 viewModel = viewModel,[m
+                 onBackClick = { navController.popBackStack() },[m
+                 onHotelClick = { hotel ->[m
+[31m-                    navController.navigate(Screen.HotelDetails.createRoute(hotel.id))

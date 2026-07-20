@@ -4,7 +4,18 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,19 +49,14 @@ import com.frei.app.FreiFieldLabel
 import com.frei.app.FreiGhostButton
 import com.frei.app.FreiPrimaryButton
 import com.frei.app.PerforatedDivider
-import com.frei.app.ui.theme.*
 import com.frei.app.ui.theme.FreiBg
+import com.frei.app.ui.theme.FreiGradPurple
 import com.frei.app.ui.theme.FreiInkFaint
 import com.frei.app.ui.theme.FreiInkSoft
 import com.frei.app.ui.theme.FreiTealSoft
 import com.frei.app.ui.theme.SecondaryMint
 import com.frei.app.ui.theme.TextDarkInk
 
-/**
- * Immutable snapshot of everything the boarding pass needs to render.
- * Populate this from your booking repository once a flight booking's
- * status flips to CONFIRMED (see FlightConfirmPayScreen -> Firestore write).
- */
 data class BoardingPassUiState(
     val airline: String,
     val flightNumber: String,
@@ -140,7 +146,6 @@ fun BoardingPassScreen(
     }
 }
 
-/** The tappable, flippable card. Front = pass details, back = barcode/QR for gate scanning. */
 @Composable
 private fun FlippableBoardingPassCard(state: BoardingPassUiState, modifier: Modifier = Modifier) {
     var flipped by remember { mutableStateOf(false) }

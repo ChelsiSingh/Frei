@@ -41,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.frei.app.data.model.Expense
+import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.Trip
 import com.frei.app.data.repository.BookingRepositoryImpl
 import com.frei.app.data.repository.FirestoreExpenseRepository
@@ -62,6 +64,7 @@ import com.frei.app.presentation.packing.PackingCategory
 import com.frei.app.presentation.packing.PackingItem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -111,14 +114,11 @@ private fun formatIso(iso: String): String = runCatching {
     DateTimeFormatter.ofPattern("dd MMM, hh:mm a").withZone(ZoneId.systemDefault()).format(instant)
 }.getOrDefault(iso)
 
-// NOTE: assumes checkInDate/checkOutDate are stored as "yyyy-MM-dd".
-// If HotelGuestDetailsScreen writes a different format, this silently returns null
-// and every hotel booking will show as Confirmed regardless of date. Flag this if so.
 private fun hotelDateInstant(dateStr: String): Instant? = runCatching {
     LocalDate.parse(dateStr).atStartOfDay(ZoneId.systemDefault()).toInstant()
 }.getOrNull()
 
-// ---------- Screen ----------
+// Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,6 +152,10 @@ fun MyTripScreen(
 
     var expenses by remember { mutableStateOf<List<Expense>>(emptyList()) }
     var isLoadingExpenses by remember { mutableStateOf(true) }
+
+    var showAddExpenseDialog by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
 
     // Load Core Trip Details
     LaunchedEffect(tripId) {
@@ -192,11 +196,20 @@ fun MyTripScreen(
             isLoadingBookings = true
             when (selectedBookingMode) {
                 BookingMode.FLIGHT -> bookingRepository.getFlightBookings(currentUid, tripId)
-                    .onSuccess { flightBookings = it }
+                    .onSuccess {
+                        flightBookings = it
+                        isLoadingBookings = false}
+                    .onFailure {
+                        Toast.makeText(context, "Couldn't load flights: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
                 BookingMode.HOTEL -> bookingRepository.getHotelBookings(currentUid, tripId)
-                    .onSuccess { hotelBookings = it }
+                    .onSuccess {
+                        hotelBookings = it
+                        isLoadingBookings = false}
+                    .onFailure {
+                        Toast.makeText(context, "Couldn't load hotels: ${it.message}", Toast.LENGTH_LONG).show()
+                    }
             }
-            isLoadingBookings = false
         }
     }
 
@@ -280,6 +293,15 @@ fun MyTripScreen(
                         contentColor = Color.White
                     ) {
                         Icon(Icons.Default.Add, contentDescription = "Book flight or hotel")
+                    }
+                }
+                selectedTab == TripTab.Expenses -> {
+                    FloatingActionButton(
+                        onClick = { showAddExpenseDialog = true },
+                        containerColor = FreiPurple,
+                        contentColor = Color.White
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = "Add expense")
                     }
                 }
             }
@@ -602,6 +624,29 @@ fun MyTripScreen(
                                 packingCategories = packingCategories + PackingCategory(id = generatedId, name = name)
                             }
                             showAddCategoryDialog = false
+                        }
+                    )
+                }
+
+                if (showAddExpenseDialog) {
+                    AddExpenseDialog(
+                        onDismiss = { showAddExpenseDialog = false },
+                        onConfirm = { title, amount, category ->
+                            val expense = Expense(
+                                userId = currentUid,
+                                tripId = tripId,
+                                tripName = tripDetails?.title,
+                                title = title,
+                                category = category,
+                                amount = amount,
+                                source = ExpenseSource.MANUAL
+                            )
+                            // launch on a coroutine scope tied to the composable
+                            coroutineScope.launch {
+                                runCatching { expenseRepository.addExpense(expense) }
+                                    .onFailure { Toast.makeText(context, "Couldn't save expense", Toast.LENGTH_SHORT).show() }
+                            }
+                            showAddExpenseDialog = false
                         }
                     )
                 }

@@ -2,6 +2,7 @@ package com.frei.app.navigation
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -44,7 +45,7 @@ import com.frei.app.presentation.newtrip.NewTripScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
 import com.frei.app.presentation.profile.ProfileScreen
-import androidx.compose.runtime.getValue
+
 
 @Composable
 fun FreiNavGraph() {
@@ -76,9 +77,16 @@ fun FreiNavGraph() {
             )
         }
 
-        composable(Screen.Home.route) {
+        composable(
+            route = Screen.Home.route,
+            arguments = listOf(
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")
             HomeScreen(
                 navController = navController,
+                tripId = tripId,
                 onNewTripClick = {
                     navController.navigate(Screen.NewTrip.route)
                 },
@@ -193,31 +201,37 @@ fun FreiNavGraph() {
                 navArgument("depart_date") { type = NavType.StringType },
                 navArgument("pax_count") { type = NavType.IntType },
                 navArgument("is_round_trip") { type = NavType.BoolType },
-                navArgument("return_date") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("return_date") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
-        ) {
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")
             val viewModel: FlightListViewModel = hiltViewModel()
             FlightListScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onEditSearchClick = { navController.popBackStack() },
                 onBookFlight = { flight ->
-                    navController.navigate(Screen.BookingDetails.createRoute(flight.id))
+                    navController.navigate(Screen.BookingDetails.createRoute(flight.id, tripId))
                 }
             )
         }
 
         composable(
             route = Screen.BookingDetails.route,
-            arguments = listOf(navArgument("flightId") { type = NavType.StringType })
-        ) {
+            arguments = listOf(
+                navArgument("flightId") { type = NavType.StringType },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")
             val viewModel: BookingDetailsViewModel = hiltViewModel()
             BookingDetailsScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onSelectSeatClick = { flightId, travelers, name, email, mobile ->
                     navController.navigate(
-                        Screen.SeatSelection.createRoute(flightId, travelers, name, email, mobile)
+                        Screen.SeatSelection.createRoute(flightId, travelers, name, email, mobile, tripId)
                     )
                 }
             )
@@ -230,7 +244,8 @@ fun FreiNavGraph() {
                 navArgument("travelers") { type = NavType.StringType; defaultValue = "1" },
                 navArgument("name") { type = NavType.StringType; defaultValue = "" },
                 navArgument("email") { type = NavType.StringType; defaultValue = "" },
-                navArgument("phone") { type = NavType.StringType; defaultValue = "" }
+                navArgument("phone") { type = NavType.StringType; defaultValue = "" },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
             val flightId = backStackEntry.arguments?.getString("flightId").orEmpty()
@@ -238,6 +253,7 @@ fun FreiNavGraph() {
             val name = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("name").orEmpty(), "UTF-8")
             val email = java.net.URLDecoder.decode(backStackEntry.arguments?.getString("email").orEmpty(), "UTF-8")
             val phone = backStackEntry.arguments?.getString("phone").orEmpty()
+            val tripId = backStackEntry.arguments?.getString("tripId")
 
             val viewModel: SeatSelectionViewModel = hiltViewModel()
             SeatSelectionScreen(
@@ -246,14 +262,9 @@ fun FreiNavGraph() {
                 onContinue = { seat ->
                     navController.navigate(
                         Screen.FlightConfirmPay.createRoute(
-                            flightId = flightId,
-                            travelers = travelers,
-                            name = name,
-                            email = email,
-                            phone = phone,
-                            seat = seat.seatNumber,
-                            seatClass = seat.seatClass.name,
-                            seatPrice = seat.extraPrice
+                            flightId = flightId, travelers = travelers, name = name, email = email, phone = phone,
+                            seat = seat.seatNumber, seatClass = seat.seatClass.name, seatPrice = seat.extraPrice,
+                            tripId = tripId
                         )
                     )
                 }
@@ -265,37 +276,47 @@ fun FreiNavGraph() {
             arguments = listOf(
                 navArgument("city_id") { type = NavType.StringType },
                 navArgument("city_name") { type = NavType.StringType },
-                navArgument("min_stars") { type = NavType.StringType; nullable = true; defaultValue = null }
+                navArgument("min_stars") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
-        ) {
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")
             val viewModel: HotelListViewModel = hiltViewModel()
             HotelListScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onHotelClick = { hotel ->
-                    navController.navigate(Screen.HotelDetails.createRoute(hotel.id))
+                    navController.navigate(Screen.HotelDetails.createRoute(hotel.id, tripId))
                 }
             )
         }
 
         composable(
             route = Screen.HotelDetails.route,
-            arguments = listOf(navArgument("hotelId") { type = NavType.StringType })
-        ) {
+            arguments = listOf(
+                navArgument("hotelId") { type = NavType.StringType },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")
             val viewModel: HotelDetailsViewModel = hiltViewModel()
             HotelDetailsScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onReserveClick = { hotelId ->
-                    navController.navigate(Screen.HotelGuestDetails.createRoute(hotelId))
+                    navController.navigate(Screen.HotelGuestDetails.createRoute(hotelId, tripId))
                 }
             )
         }
 
         composable(
             route = Screen.HotelGuestDetails.route,
-            arguments = listOf(navArgument("hotelId") { type = NavType.StringType })
-        ) {
+            arguments = listOf(
+                navArgument("hotelId") { type = NavType.StringType },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
+            )
+        ) { backStackEntry ->
+            val tripId = backStackEntry.arguments?.getString("tripId")
             val viewModel: HotelDetailsViewModel = hiltViewModel()
             HotelGuestDetailsScreen(
                 viewModel = viewModel,
@@ -303,14 +324,8 @@ fun FreiNavGraph() {
                 onContinueClick = { hotelId, guests, name, email, phone, nights, checkIn, checkOut ->
                     navController.navigate(
                         Screen.HotelConfirmPay.createRoute(
-                            hotelId = hotelId,
-                            guests = guests,
-                            name = name,
-                            email = email,
-                            phone = phone,
-                            nights = nights,
-                            checkIn = checkIn,
-                            checkOut = checkOut
+                            hotelId = hotelId, guests = guests, name = name, email = email, phone = phone,
+                            nights = nights, checkIn = checkIn, checkOut = checkOut, tripId = tripId
                         )
                     )
                 }
@@ -327,7 +342,8 @@ fun FreiNavGraph() {
                 navArgument("phone") { type = NavType.StringType; defaultValue = "" },
                 navArgument("seat") { type = NavType.StringType; defaultValue = "" },
                 navArgument("seatClass") { type = NavType.StringType; defaultValue = "" },
-                navArgument("seatPrice") { type = NavType.StringType; defaultValue = "0.0" }
+                navArgument("seatPrice") { type = NavType.StringType; defaultValue = "0.0" },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) {
             val viewModel: FlightConfirmPayViewModel = hiltViewModel()
@@ -349,7 +365,8 @@ fun FreiNavGraph() {
                 navArgument("nights") { type = NavType.StringType; defaultValue = "1" },
                 navArgument("checkIn") { type = NavType.StringType; defaultValue = "" },
                 navArgument("checkOut") { type = NavType.StringType; defaultValue = "" },
-                navArgument("roomType") { type = NavType.StringType; defaultValue = "Studio Suite" }
+                navArgument("roomType") { type = NavType.StringType; defaultValue = "Studio Suite" },
+                navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) {
             val viewModel: HotelConfirmPayViewModel = hiltViewModel()

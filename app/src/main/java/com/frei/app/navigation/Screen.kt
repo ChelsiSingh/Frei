@@ -22,7 +22,7 @@ sealed class Screen(val route: String) {
         data object Profile : Screen("profile")
 
         data object FlightList : Screen(
-                "flight_list/{origin}/{destination}/{depart_date}/{pax_count}/{is_round_trip}?return_date={return_date}"
+                "flight_list/{origin}/{destination}/{depart_date}/{pax_count}/{is_round_trip}?return_date={return_date}&tripId={tripId}"
         ) {
                 fun createRoute(
                         origin: String,
@@ -34,17 +34,23 @@ sealed class Screen(val route: String) {
                         returnDate: String? = null
                 ): String {
                         val base = "flight_list/$origin/$destination/$departDate/$paxCount/$isRoundTrip"
-                        return if (isRoundTrip && !returnDate.isNullOrBlank()) "$base?return_date=$returnDate" else base
+                        val params = buildList {
+                                if (isRoundTrip && !returnDate.isNullOrBlank()) add("return_date=$returnDate")
+                                if (!tripId.isNullOrBlank()) add("tripId=$tripId")
+                        }
+                        return if (params.isEmpty()) base else "$base?${params.joinToString("&")}"
                 }
         }
 
-        data object BookingDetails : Screen("booking_details/{flightId}") {
-                fun createRoute(flightId: String) = "booking_details/$flightId"
+        data object BookingDetails : Screen("booking_details/{flightId}?tripId={tripId}") {
+                fun createRoute(flightId: String, tripId: String? = null): String {
+                        val base = "booking_details/$flightId"
+                        return if (tripId != null) "$base?tripId=$tripId" else base
+                }
         }
 
-
         data object HotelList : Screen(
-                "hotel_list/{city_id}/{city_name}?min_stars={min_stars}"
+                "hotel_list/{city_id}/{city_name}?min_stars={min_stars}&tripId={tripId}"
         ) {
                 fun createRoute(
                         cityId: String,
@@ -54,7 +60,11 @@ sealed class Screen(val route: String) {
                 ): String {
                         val encodedName = java.net.URLEncoder.encode(cityName, "UTF-8")
                         val base = "hotel_list/$cityId/$encodedName"
-                        return if (minStars != null) "$base?min_stars=$minStars" else base
+                        val params = buildList {
+                                if (minStars != null) add("min_stars=$minStars")
+                                if (!tripId.isNullOrBlank()) add("tripId=$tripId")
+                        }
+                        return if (params.isEmpty()) base else "$base?${params.joinToString("&")}"
                 }
         }
 
@@ -65,50 +75,57 @@ sealed class Screen(val route: String) {
                 }
         }
 
-        data object HotelGuestDetails : Screen("hotel_guest_details/{hotelId}") {
-                fun createRoute(hotelId: String) = "hotel_guest_details/$hotelId"
+        data object HotelGuestDetails : Screen("hotel_guest_details/{hotelId}?tripId={tripId}") {
+                fun createRoute(hotelId: String, tripId: String? = null): String {
+                        val base = "hotel_guest_details/$hotelId"
+                        return if (tripId != null) "$base?tripId=$tripId" else base
+                }
         }
 
         data object SeatSelection : Screen(
-                "seat_selection/{flightId}?travelers={travelers}&name={name}&email={email}&phone={phone}"
+                "seat_selection/{flightId}?travelers={travelers}&name={name}&email={email}&phone={phone}&tripId={tripId}"
         ) {
-                fun createRoute(flightId: String, travelers: Int, name: String, email: String, phone: String): String {
+                fun createRoute(flightId: String, travelers: Int, name: String, email: String, phone: String, tripId: String? = null): String {
                         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
                         val encodedEmail = java.net.URLEncoder.encode(email, "UTF-8")
-                        return "seat_selection/$flightId?travelers=$travelers&name=$encodedName&email=$encodedEmail&phone=$phone"
+                        val tripParam = if (!tripId.isNullOrBlank()) "&tripId=$tripId" else ""
+                        return "seat_selection/$flightId?travelers=$travelers&name=$encodedName&email=$encodedEmail&phone=$phone$tripParam"
                 }
         }
 
         data object FlightConfirmPay : Screen(
                 "flight_confirm_pay/{flightId}?travelers={travelers}&name={name}&email={email}&phone={phone}" +
-                        "&seat={seat}&seatClass={seatClass}&seatPrice={seatPrice}"
+                        "&seat={seat}&seatClass={seatClass}&seatPrice={seatPrice}&tripId={tripId}"
         ) {
                 fun createRoute(
                         flightId: String, travelers: Int, name: String, email: String, phone: String,
-                        seat: String, seatClass: String, seatPrice: Double
+                        seat: String, seatClass: String, seatPrice: Double, tripId: String? = null
                 ): String {
                         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
                         val encodedEmail = java.net.URLEncoder.encode(email, "UTF-8")
+                        val tripParam = if (!tripId.isNullOrBlank()) "&tripId=$tripId" else ""
                         return "flight_confirm_pay/$flightId?travelers=$travelers&name=$encodedName&email=$encodedEmail" +
-                                "&phone=$phone&seat=$seat&seatClass=$seatClass&seatPrice=$seatPrice"
+                                "&phone=$phone&seat=$seat&seatClass=$seatClass&seatPrice=$seatPrice$tripParam"
                 }
         }
 
         data object HotelConfirmPay : Screen(
                 "hotel_confirm_pay/{hotelId}?guests={guests}&name={name}&email={email}&phone={phone}" +
-                        "&nights={nights}&checkIn={checkIn}&checkOut={checkOut}&roomType={roomType}"
+                        "&nights={nights}&checkIn={checkIn}&checkOut={checkOut}&roomType={roomType}&tripId={tripId}"
         ) {
                 fun createRoute(
                         hotelId: String, guests: Int, name: String, email: String, phone: String,
-                        nights: Int = 1, checkIn: String = "", checkOut: String = "", roomType: String = "Studio Suite"
+                        nights: Int = 1, checkIn: String = "", checkOut: String = "", roomType: String = "Studio Suite",
+                        tripId: String? = null
                 ): String {
                         val encodedName = java.net.URLEncoder.encode(name, "UTF-8")
                         val encodedEmail = java.net.URLEncoder.encode(email, "UTF-8")
                         val encodedCheckIn = java.net.URLEncoder.encode(checkIn, "UTF-8")
                         val encodedCheckOut = java.net.URLEncoder.encode(checkOut, "UTF-8")
                         val encodedRoomType = java.net.URLEncoder.encode(roomType, "UTF-8")
+                        val tripParam = if (!tripId.isNullOrBlank()) "&tripId=$tripId" else ""
                         return "hotel_confirm_pay/$hotelId?guests=$guests&name=$encodedName&email=$encodedEmail&phone=$phone" +
-                                "&nights=$nights&checkIn=$encodedCheckIn&checkOut=$encodedCheckOut&roomType=$encodedRoomType"
+                                "&nights=$nights&checkIn=$encodedCheckIn&checkOut=$encodedCheckOut&roomType=$encodedRoomType$tripParam"
                 }
         }
 
