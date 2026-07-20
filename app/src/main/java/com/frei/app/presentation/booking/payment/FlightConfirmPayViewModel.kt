@@ -3,8 +3,12 @@ package com.frei.app.presentation.booking.payment
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.frei.app.data.model.Expense
+import com.frei.app.data.model.ExpenseCategory
+import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.flight.Flight
 import com.frei.app.data.repository.BookingRepository
+import com.frei.app.data.repository.ExpenseRepository
 import com.frei.app.data.repository.FlightBookingRecord
 import com.frei.app.data.repository.FlightRepository
 import com.frei.app.data.repository.PaymentRepository
@@ -37,6 +41,7 @@ class FlightConfirmPayViewModel @Inject constructor(
     private val flightRepository: FlightRepository,
     private val paymentRepository: PaymentRepository,
     private val bookingRepository: BookingRepository,
+    private val expenseRepository: ExpenseRepository,
     private val auth: FirebaseAuth,
     val paymentManager: RazorpayPaymentManager,
     savedStateHandle: SavedStateHandle
@@ -45,13 +50,15 @@ class FlightConfirmPayViewModel @Inject constructor(
     val flightId: String = savedStateHandle["flightId"] ?: ""
     val travelers: Int = (savedStateHandle["travelers"] as? String)?.toIntOrNull() ?: 1
     val guestPhone: String = savedStateHandle["phone"] ?: ""
-
+    val tripIdArg: String? = savedStateHandle["tripId"]
     val seatNumber: String = savedStateHandle["seat"] ?: ""
     val seatClass: String = savedStateHandle["seatClass"] ?: ""
     val seatPrice: Double = (savedStateHandle["seatPrice"] as? String)?.toDoubleOrNull() ?: 0.0
 
     private val _uiState = MutableStateFlow<PaymentUiState>(PaymentUiState.Loading)
     val uiState: StateFlow<PaymentUiState> = _uiState.asStateFlow()
+
+    private var lastReadyState: PaymentUiState.Ready? = null
 
     init {
         loadFlight()
@@ -79,7 +86,9 @@ class FlightConfirmPayViewModel @Inject constructor(
                     val baseFare = flight.price * travelers
                     val taxesAndFees = TAX_RATE
                     val total = baseFare + taxesAndFees + seatPrice
-                    _uiState.value = PaymentUiState.Ready(flight, baseFare, taxesAndFees, seatPrice, total)
+                    val ready = PaymentUiState.Ready(flight, baseFare, taxesAndFees, seatPrice, total)
+                    lastReadyState = ready
+                    _uiState.value = ready
                 }
                 .onFailure {
                     _uiState.value = PaymentUiState.Failed("Couldn't load booking details.")
@@ -88,7 +97,7 @@ class FlightConfirmPayViewModel @Inject constructor(
     }
 
     companion object {
-        private const val TAX_RATE = 0.1
+        private const val TAX_RATE = 0.2
     }
 
     fun createOrder(onOrderReady: (orderId: String, keyId: String, amountPaise: Int) -> Unit) {
@@ -129,12 +138,18 @@ class FlightConfirmPayViewModel @Inject constructor(
             )
             return
         }
-        val readyState = _uiState.value as? PaymentUiState.Ready
+        val readyState = lastReadyState
         val totalPrice = readyState?.totalPrice ?: 0.0
         val flight = readyState?.flight
 
-        bookingRepository.getOrCreateTripId(uid)
+        var savedTripId: String? = null
+
+        val tripIdResult: Result<String> =
+            tripIdArg?.let { Result.success(it) } ?: bookingRepository.getOrCreateTripId(uid)
+
+        tripIdResult
             .mapCatching { tripId ->
+                savedTripId = tripId
                 bookingRepository.saveFlightBooking(
                     FlightBookingRecord(
                         tripId = tripId,
@@ -160,11 +175,36 @@ class FlightConfirmPayViewModel @Inject constructor(
                     )
                 ).getOrThrow()
             }
-            .onSuccess { _uiState.value = PaymentUiState.Success }
+            .onSuccess {
+                _uiState.value = PaymentUiState.Success
+                recordExpense(uid, savedTripId, totalPrice, flight)
+            }
             .onFailure {
                 _uiState.value = PaymentUiState.Failed(
                     "Payment succeeded but saving the booking failed. Contact support with payment ID ${result.paymentId}."
                 )
             }
+    }
+
+    private suspend fun recordExpense(uid: String, tripId: String?, amount: Double, flight: Flight?) {
+        val tripName = tripId?.let { runCatching { expenseRepository.getTripName(it) }.getOrNull() }
+        val title = if (flight != null && flight.fromAirport.isNotBlank() && flight.toAirport.isNotBlank()) {
+            "Flight ${flight.fromAirport} \u2192 ${flight.toAirport}"
+        } else {
+            "Flight booking"
+        }
+        runCatching {
+            expenseRepository.addExpense(
+                Expense(
+                    userId = uid,
+                    tripId = tripId,
+                    tripName = tripName,
+                    title = title,
+                    category = ExpenseCategory.FLIGHT,
+                    amount = amount,
+                    source = ExpenseSource.AUTO
+                )
+            )
+        }
     }
 }

@@ -60,8 +60,8 @@ interface BookingRepository {
     suspend fun getOrCreateTripId(uid: String): Result<String>
     suspend fun saveFlightBooking(record: FlightBookingRecord): Result<Unit>
     suspend fun saveHotelBooking(record: HotelBookingRecord): Result<Unit>
-    suspend fun getFlightBookings(uid: String): Result<List<FlightBookingRecord>>
-    suspend fun getHotelBookings(uid: String): Result<List<HotelBookingRecord>>
+    suspend fun getFlightBookings(uid: String, tripId: String? = null): Result<List<FlightBookingRecord>>
+    suspend fun getHotelBookings(uid: String, tripId: String? = null): Result<List<HotelBookingRecord>>
 }
 
 class BookingRepositoryImpl @Inject constructor(
@@ -89,18 +89,32 @@ class BookingRepositoryImpl @Inject constructor(
         Unit
     }
 
-    override suspend fun getFlightBookings(uid: String): Result<List<FlightBookingRecord>> = runCatching {
-        firestore.collection("flightDetails")
+    // tripId == null -> all bookings for this user across every trip (used by the
+    // top-level all-trips BookingsScreen).
+    // tripId != null -> scoped to a single trip (used by MyTripScreen's Bookings tab).
+    // The scoped path requires a composite index on (uid, tripId, bookedAt) —
+    // Firestore will prompt for it via a Logcat link on first run after this change.
+    // The unscoped path only needs (uid, bookedAt), which should already exist.
+    override suspend fun getFlightBookings(uid: String, tripId: String?): Result<List<FlightBookingRecord>> = runCatching {
+        var query = firestore.collection("flightDetails")
             .whereEqualTo("uid", uid)
+        if (tripId != null) {
+            query = query.whereEqualTo("tripId", tripId)
+        }
+        query
             .orderBy("bookedAt", Query.Direction.DESCENDING)
             .get()
             .await()
             .toObjects(FlightBookingRecord::class.java)
     }
 
-    override suspend fun getHotelBookings(uid: String): Result<List<HotelBookingRecord>> = runCatching {
-        firestore.collection("hotelDetails")
+    override suspend fun getHotelBookings(uid: String, tripId: String?): Result<List<HotelBookingRecord>> = runCatching {
+        var query = firestore.collection("hotelDetails")
             .whereEqualTo("uid", uid)
+        if (tripId != null) {
+            query = query.whereEqualTo("tripId", tripId)
+        }
+        query
             .orderBy("bookedAt", Query.Direction.DESCENDING)
             .get()
             .await()

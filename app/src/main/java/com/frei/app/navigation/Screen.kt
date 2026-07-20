@@ -4,7 +4,11 @@ sealed class Screen(val route: String) {
 
         data object Login : Screen("login")
         data object Register : Screen("register")
-        data object Home : Screen("home")
+        data object Home : Screen("home?tripId={tripId}") {
+                fun createRoute(tripId: String? = null): String =
+                        if (tripId != null) "home?tripId=$tripId" else "home"
+        }
+
         data object Trips : Screen("trips")
         data object NewTrip : Screen("new_trip")
         data object TripsDashboard : Screen("trips_dashboard")
@@ -26,6 +30,7 @@ sealed class Screen(val route: String) {
                         departDate: String,
                         paxCount: Int,
                         isRoundTrip: Boolean,
+                        tripId: String? = null,
                         returnDate: String? = null
                 ): String {
                         val base = "flight_list/$origin/$destination/$departDate/$paxCount/$isRoundTrip"
@@ -44,7 +49,8 @@ sealed class Screen(val route: String) {
                 fun createRoute(
                         cityId: String,
                         cityName: String,
-                        minStars: Double? = null
+                        minStars: Double? = null,
+                        tripId: String? = null
                 ): String {
                         val encodedName = java.net.URLEncoder.encode(cityName, "UTF-8")
                         val base = "hotel_list/$cityId/$encodedName"
@@ -52,8 +58,11 @@ sealed class Screen(val route: String) {
                 }
         }
 
-        data object HotelDetails : Screen("hotel_details/{hotelId}") {
-                fun createRoute(hotelId: String) = "hotel_details/$hotelId"
+        data object HotelDetails : Screen("hotel_details/{hotelId}?tripId={tripId}") {
+                fun createRoute(hotelId: String, tripId: String? = null): String {
+                        val base = "hotel_details/$hotelId"
+                        return if (tripId != null) "$base?tripId=$tripId" else base
+                }
         }
 
         data object HotelGuestDetails : Screen("hotel_guest_details/{hotelId}") {
@@ -101,5 +110,21 @@ sealed class Screen(val route: String) {
                         return "hotel_confirm_pay/$hotelId?guests=$guests&name=$encodedName&email=$encodedEmail&phone=$phone" +
                                 "&nights=$nights&checkIn=$encodedCheckIn&checkOut=$encodedCheckOut&roomType=$encodedRoomType"
                 }
+        }
+
+        data object BoardingPass : Screen("boarding_pass/{flightId}") {
+                fun createRoute(flightId: String) = "boarding_pass/$flightId"
+        }
+
+        data object FlightInvoice : Screen("flight_invoice/{flightId}") {
+                fun createRoute(flightId: String) = "flight_invoice/$flightId"
+        }
+
+        data object HotelInvoice : Screen("hotel_invoice/{hotelBookingId}") {
+                fun createRoute(hotelBookingId: String) = "hotel_invoice/$hotelBookingId"
+        }
+
+        data object HotelBookingDetails : Screen("hotel_booking_details/{hotelBookingId}") {
+                fun createRoute(hotelBookingId: String) = "hotel_booking_details/$hotelBookingId"
         }
 }

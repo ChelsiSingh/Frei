@@ -57,9 +57,9 @@ class FlightViewModel @Inject constructor(
     private val _destinationState = MutableStateFlow<AirportUiState>(AirportUiState.Idle)
     val destinationState: StateFlow<AirportUiState> = _destinationState.asStateFlow()
 
-    val initialOrigin: String = savedStateHandle["origin"] ?: "BOM"
-    val initialDestination: String = savedStateHandle["destination"] ?: "DPS"
-    val initialDepartureDate: String = savedStateHandle["depart_date"] ?: "2026-07-24"
+    val initialOrigin: String = savedStateHandle["origin"] ?: ""
+    val initialDestination: String = savedStateHandle["destination"] ?: ""
+    val initialDepartureDate: String = savedStateHandle["depart_date"] ?: "2026-08-24"
     val initialIsRoundTrip: Boolean = savedStateHandle["is_round_trip"] ?: false
     val initialPaxCount: Int = savedStateHandle["pax_count"] ?: 1
 

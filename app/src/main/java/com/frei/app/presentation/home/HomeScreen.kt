@@ -31,6 +31,7 @@ fun HomeScreen(
     onExpensesClick: () -> Unit,
     onNewTripClick: () -> Unit,
     onPackingClick: () -> Unit,
+    tripId: String? = null,
     flightViewModel: FlightViewModel = hiltViewModel(),
     hotelViewModel: HotelViewModel = hiltViewModel()
 ) {
@@ -75,7 +76,8 @@ fun HomeScreen(
                                 departDate = departDate,
                                 returnDate = returnDate,
                                 paxCount = pax,
-                                isRoundTrip = isRoundTrip
+                                isRoundTrip = isRoundTrip,
+                                tripId = tripId
                             )
                         )
                     },
@@ -84,7 +86,8 @@ fun HomeScreen(
                             Screen.HotelList.createRoute(
                                 cityId = cityId,
                                 cityName = cityName,
-                                minStars = minStars
+                                minStars = minStars,
+                                tripId = tripId
                             )
                         )
                     }
@@ -97,9 +100,9 @@ fun HomeScreen(
                 )
             }
             item {
-                    RecommendedHotelsSection(
+                RecommendedHotelsSection(
                     onHotelClick = { hotelId ->
-                        navController.navigate(Screen.HotelDetails.createRoute(hotelId))
+                        navController.navigate(Screen.HotelDetails.createRoute(hotelId, tripId))
                     }
                 )
             }

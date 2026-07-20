@@ -3,8 +3,12 @@ package com.frei.app.presentation.booking.payment
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.frei.app.data.model.Expense
+import com.frei.app.data.model.ExpenseCategory
+import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.hotel.Hotel
 import com.frei.app.data.repository.BookingRepository
+import com.frei.app.data.repository.ExpenseRepository
 import com.frei.app.data.repository.HotelBookingRecord
 import com.frei.app.data.repository.HotelRepository
 import com.frei.app.data.repository.PaymentRepository
@@ -36,6 +40,7 @@ class HotelConfirmPayViewModel @Inject constructor(
     private val hotelRepository: HotelRepository,
     private val paymentRepository: PaymentRepository,
     private val bookingRepository: BookingRepository,
+    private val expenseRepository: ExpenseRepository,
     private val auth: FirebaseAuth,
     val paymentManager: RazorpayPaymentManager,
     savedStateHandle: SavedStateHandle
@@ -44,11 +49,14 @@ class HotelConfirmPayViewModel @Inject constructor(
     val hotelId: String = savedStateHandle["hotelId"] ?: ""
     val guests: Int = (savedStateHandle["guests"] as? String)?.toIntOrNull() ?: 1
     val guestPhone: String = savedStateHandle["phone"] ?: ""
+    val tripIdArg: String? = savedStateHandle["tripId"]
 
     val nights: Int = (savedStateHandle["nights"] as? String)?.toIntOrNull() ?: 1
 
     private val _uiState = MutableStateFlow<HotelPaymentUiState>(HotelPaymentUiState.Loading)
     val uiState: StateFlow<HotelPaymentUiState> = _uiState.asStateFlow()
+
+    private var lastReadyState: HotelPaymentUiState.Ready? = null
 
     init {
         viewModelScope.launch {
@@ -56,12 +64,14 @@ class HotelConfirmPayViewModel @Inject constructor(
                 .onSuccess { hotel ->
                     val roomCost = hotel.pricePerNight.toDouble() * nights
                     val taxesAndCharges = roomCost * TAX_RATE
-                    _uiState.value = HotelPaymentUiState.Ready(
+                    val ready = HotelPaymentUiState.Ready(
                         hotel = hotel,
                         roomCost = roomCost,
                         taxesAndCharges = taxesAndCharges,
                         totalPrice = roomCost + taxesAndCharges
                     )
+                    lastReadyState = ready
+                    _uiState.value = ready
                 }
                 .onFailure { _uiState.value = HotelPaymentUiState.Failed("Couldn't load booking details.") }
         }
@@ -117,12 +127,18 @@ class HotelConfirmPayViewModel @Inject constructor(
             )
             return
         }
-        val readyState = _uiState.value as? HotelPaymentUiState.Ready
+        val readyState = lastReadyState
         val totalPrice = readyState?.totalPrice ?: 0.0
         val hotel = readyState?.hotel
 
-        bookingRepository.getOrCreateTripId(uid)
+        var savedTripId: String? = null
+
+        val tripIdResult: Result<String> =
+            tripIdArg?.let { Result.success(it) } ?: bookingRepository.getOrCreateTripId(uid)
+
+        tripIdResult
             .mapCatching { tripId ->
+                savedTripId = tripId
                 bookingRepository.saveHotelBooking(
                     HotelBookingRecord(
                         tripId = tripId,
@@ -147,7 +163,10 @@ class HotelConfirmPayViewModel @Inject constructor(
                     )
                 ).getOrThrow()
             }
-            .onSuccess { _uiState.value = HotelPaymentUiState.Success }
+            .onSuccess {
+                _uiState.value = HotelPaymentUiState.Success
+                recordExpense(uid, savedTripId, totalPrice, hotel)
+            }
             .onFailure {
                 _uiState.value = HotelPaymentUiState.Failed(
                     "Payment succeeded but saving the booking failed. Contact support with payment ID ${result.paymentId}."
@@ -155,8 +174,26 @@ class HotelConfirmPayViewModel @Inject constructor(
             }
     }
 
+    private suspend fun recordExpense(uid: String, tripId: String?, amount: Double, hotel: Hotel?) {
+        val tripName = tripId?.let { runCatching { expenseRepository.getTripName(it) }.getOrNull() }
+        val title = hotel?.name?.takeIf { it.isNotBlank() } ?: "Hotel booking"
+        runCatching {
+            expenseRepository.addExpense(
+                Expense(
+                    userId = uid,
+                    tripId = tripId,
+                    tripName = tripName,
+                    title = title,
+                    category = ExpenseCategory.HOTEL,
+                    amount = amount,
+                    source = ExpenseSource.AUTO
+                )
+            )
+        }
+    }
+
     companion object {
         // Placeholder rate — swap for a real tax figure if your backend ever returns one.
-        private const val TAX_RATE = 0.18
+        private const val TAX_RATE = 0.2
     }
 }

@@ -4,6 +4,7 @@ import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,14 +27,24 @@ import com.frei.app.presentation.booking.payment.HotelConfirmPayScreen
 import com.frei.app.presentation.booking.payment.HotelConfirmPayViewModel
 import com.frei.app.presentation.booking.seat.SeatSelectionScreen
 import com.frei.app.presentation.booking.seat.SeatSelectionViewModel
+import com.frei.app.presentation.expenses.ExpensesScreen
 import com.frei.app.presentation.home.HomeScreen
+import com.frei.app.presentation.mybookings.BoardingPassScreen
+import com.frei.app.presentation.mybookings.BoardingPassViewModel
 import com.frei.app.presentation.mybookings.BookingsScreen
+import com.frei.app.presentation.mybookings.FlightInvoiceScreen
+import com.frei.app.presentation.mybookings.FlightInvoiceViewModel
+import com.frei.app.presentation.mybookings.HotelBookingDetailsScreen
+import com.frei.app.presentation.mybookings.HotelBookingDetailsViewModel
+import com.frei.app.presentation.mybookings.HotelInvoiceScreen
+import com.frei.app.presentation.mybookings.HotelInvoiceViewModel
 import com.frei.app.presentation.mytrips.MyTripScreen
 import com.frei.app.presentation.mytrips.TripsDashboardScreen
 import com.frei.app.presentation.newtrip.NewTripScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
 import com.frei.app.presentation.profile.ProfileScreen
+import androidx.compose.runtime.getValue
 
 @Composable
 fun FreiNavGraph() {
@@ -111,7 +122,16 @@ fun FreiNavGraph() {
             val idParam = backStackEntry.arguments?.getString("tripId").orEmpty()
             MyTripScreen(
                 tripId = idParam,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onNavigateHome = {
+                    navController.popBackStack(Screen.Home.route, inclusive = false)
+                },
+                onBookForTrip = { forTripId ->
+                    navController.navigate(Screen.Home.createRoute(forTripId)) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 
@@ -154,6 +174,14 @@ fun FreiNavGraph() {
                         popUpTo(0) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Screen.Expenses.route) {
+            val ctx = LocalContext.current
+            ExpensesScreen(
+                onBackClick = { navController.popBackStack() },
+                onFilterClick = { Toast.makeText(ctx, "Filter — coming soon", Toast.LENGTH_SHORT).show() }
             )
         }
 
@@ -336,22 +364,94 @@ fun FreiNavGraph() {
             BookingsScreen(
                 onBackClick = { navController.popBackStack() },
                 onBoardingPassClick = { booking ->
-                    // TODO: navigate to a real boarding-pass screen once it exists
-                    // navController.navigate("boarding_pass/${booking.flightId}")
+                    navController.navigate(Screen.BoardingPass.createRoute(booking.flightId))
                 },
                 onFlightInvoiceClick = { booking ->
-                    // TODO: navigate to a real invoice screen once it exists
+                    navController.navigate(Screen.FlightInvoice.createRoute(booking.flightId))
                 },
                 onViewHotelBookingClick = { booking ->
-                    navController.navigate(Screen.HotelDetails.createRoute(booking.hotelId))
+                    navController.navigate(Screen.HotelBookingDetails.createRoute(booking.hotelId))
                 },
                 onHotelInvoiceClick = { booking ->
-                    // TODO: navigate to a real invoice screen once it exists
+                    navController.navigate(Screen.HotelInvoice.createRoute(booking.hotelId))
                 },
                 onSearchFlightsClick = {
                     navController.popBackStack(Screen.Home.route, inclusive = false)
                 }
             )
+        }
+
+        composable(
+            route = Screen.BoardingPass.route,
+            arguments = listOf(navArgument("flightId") { type = NavType.StringType })
+        ) {
+            val viewModel: BoardingPassViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            uiState?.let { state ->
+                BoardingPassScreen(
+                    state = state,
+                    onBackClick = { navController.popBackStack() },
+                    onShareClick = { /* TODO: share intent */ },
+                    onAddToWalletClick = { /* TODO: wallet integration */ },
+                    onDownloadClick = { /* TODO: PDF export */ }
+                )
+            }
+            // TODO: show a loading state while uiState == null (viewModel.isLoading)
+        }
+
+        composable(
+            route = Screen.FlightInvoice.route,
+            arguments = listOf(navArgument("flightId") { type = NavType.StringType })
+        ) {
+            val viewModel: FlightInvoiceViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            uiState?.let { state ->
+                FlightInvoiceScreen(
+                    state = state,
+                    onBackClick = { navController.popBackStack() },
+                    onShareClick = { /* TODO: share intent */ },
+                    onEmailClick = { /* TODO: email intent */ },
+                    onDownloadClick = { /* TODO: PDF export */ }
+                )
+            }
+        }
+
+        composable(
+            route = Screen.HotelInvoice.route,
+            arguments = listOf(navArgument("hotelBookingId") { type = NavType.StringType })
+        ) {
+            val viewModel: HotelInvoiceViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            uiState?.let { state ->
+                HotelInvoiceScreen(
+                    state = state,
+                    onBackClick = { navController.popBackStack() },
+                    onShareClick = { /* TODO: share intent */ },
+                    onEmailClick = { /* TODO: email intent */ },
+                    onDownloadClick = { /* TODO: PDF export */ }
+                )
+            }
+        }
+
+        composable(
+            route = Screen.HotelBookingDetails.route,
+            arguments = listOf(navArgument("hotelBookingId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val hotelBookingId = backStackEntry.arguments?.getString("hotelBookingId").orEmpty()
+            val viewModel: HotelBookingDetailsViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            uiState?.let { state ->
+                HotelBookingDetailsScreen(
+                    state = state,
+                    onBackClick = { navController.popBackStack() },
+                    onFavoriteClick = { /* TODO: favorite/save toggle */ },
+                    onDirectionsClick = { /* TODO: maps intent */ },
+                    onViewInvoiceClick = {
+                        navController.navigate(Screen.HotelInvoice.createRoute(hotelBookingId))
+                    },
+                    onCallContactClick = { /* TODO: dial intent */ }
+                )
+            }
         }
     }
 }
