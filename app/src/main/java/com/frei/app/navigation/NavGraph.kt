@@ -42,6 +42,7 @@ import com.frei.app.presentation.mybookings.HotelInvoiceViewModel
 import com.frei.app.presentation.mytrips.MyTripScreen
 import com.frei.app.presentation.mytrips.TripsDashboardScreen
 import com.frei.app.presentation.newtrip.NewTripScreen
+import com.frei.app.presentation.notification.NotificationsScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
 import com.frei.app.presentation.profile.ProfileScreen
@@ -92,7 +93,9 @@ fun FreiNavGraph() {
                 },
                 onPackingClick = { navController.navigate("packing_dashboard") { launchSingleTop = true } },
                 onTripsClick = { navController.navigate(Screen.TripsDashboard.route) },
-                onExpensesClick = { navController.navigate(Screen.Expenses.route) }
+                onExpensesClick = { navController.navigate(Screen.Expenses.route) },
+                onNotificationClick = { navController.navigate(Screen.Notifications.route) },
+                onProfileClick = { navController.navigate(Screen.Profile.route) }
             )
         }
 
@@ -469,6 +472,10 @@ fun FreiNavGraph() {
                     onCallContactClick = { /* TODO: dial intent */ }
                 )
             }
+        }
+
+        composable(Screen.Notifications.route) {
+            NotificationsScreen(onBackClick = { navController.popBackStack() })
         }
     }
 }

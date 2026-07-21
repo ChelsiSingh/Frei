@@ -32,7 +32,10 @@ import com.frei.app.ui.theme.FreiPurple
 
 @Composable
 fun HomeTopBar(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hasUnread: Boolean = false,
+    onNotificationsClick: () -> Unit = {},
+    onProfileClick: () -> Unit = {}
 ) {
     Row(
         modifier = modifier
@@ -55,11 +58,13 @@ fun HomeTopBar(
                     .fillMaxSize()
                     .border(1.dp, Color(0xFFE5E3EF), CircleShape)
             ) {
-                Icon(
-                    imageVector = Icons.Outlined.Person,
-                    contentDescription = "Profile",
-                    tint = FreiPurple
-                )
+                IconButton(onClick = onProfileClick) {
+                    Icon(
+                        imageVector = Icons.Outlined.Person,
+                        contentDescription = "Profile",
+                        tint = FreiPurple
+                    )
+                }
             }
         }
 
@@ -90,23 +95,15 @@ fun HomeTopBar(
             color = Color.White,
             shadowElevation = 2.dp
         ) {
-
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-
+            Box(contentAlignment = Alignment.Center) {
                 BadgedBox(
                     badge = {
-                        Badge(
-                            containerColor = Color(0xFF14B8A6)
-                        )
+                        if (hasUnread) {
+                            Badge(containerColor = Color(0xFF14B8A6))
+                        }
                     }
                 ) {
-
-                    IconButton(
-                        onClick = {}
-                    ) {
-
+                    IconButton(onClick = onNotificationsClick) {
                         Icon(
                             imageVector = Icons.Outlined.Notifications,
                             contentDescription = "Notifications"

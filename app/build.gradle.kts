@@ -138,4 +138,7 @@ dependencies {
 
     // RazorPay
     implementation("com.razorpay:checkout:1.6.+")
+
+    //Notification
+    implementation("com.google.firebase:firebase-messaging")
 }

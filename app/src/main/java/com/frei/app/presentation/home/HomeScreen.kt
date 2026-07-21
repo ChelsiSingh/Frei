@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -20,6 +22,10 @@ import com.frei.app.presentation.home.components.HomeTopBar
 import com.frei.app.presentation.home.components.QuickActionGrid
 import com.frei.app.presentation.home.components.RecommendedHotelsSection
 import com.frei.app.presentation.home.components.TripSearchSection
+import com.frei.app.presentation.notification.NotificationTokenManager
+import com.frei.app.presentation.notification.RequestNotificationPermission
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -31,10 +37,23 @@ fun HomeScreen(
     onExpensesClick: () -> Unit,
     onNewTripClick: () -> Unit,
     onPackingClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onProfileClick: () -> Unit,
     tripId: String? = null,
     flightViewModel: FlightViewModel = hiltViewModel(),
     hotelViewModel: HotelViewModel = hiltViewModel()
 ) {
+
+    val context = LocalContext.current
+    val firestore = remember { FirebaseFirestore.getInstance() }
+    val auth = remember { FirebaseAuth.getInstance() }
+
+    RequestNotificationPermission()
+
+    LaunchedEffect(Unit) {
+        NotificationTokenManager.registerCurrentToken(firestore, auth)
+    }
+
     Scaffold(
         bottomBar = {
             FreiBottomBar(
@@ -54,11 +73,16 @@ fun HomeScreen(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            // Narrower side padding than before (14dp) — matches the mockup's wider content area.
             contentPadding = PaddingValues(start = 14.dp, top = 40.dp, end = 14.dp, bottom = 150.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            item { HomeTopBar() }
+            item {
+                HomeTopBar(
+                    hasUnread = false,
+                    onNotificationsClick = onNotificationClick,
+                    onProfileClick = onProfileClick
+                )
+            }
             item {
                 val formatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 

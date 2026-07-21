@@ -21,6 +21,9 @@ sealed class Screen(val route: String) {
         data object Bookings : Screen("bookings")
         data object Profile : Screen("profile")
 
+        data object Notifications : Screen("notifications")
+
+
         data object FlightList : Screen(
                 "flight_list/{origin}/{destination}/{depart_date}/{pax_count}/{is_round_trip}?return_date={return_date}&tripId={tripId}"
         ) {
