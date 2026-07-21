@@ -1,6 +1,7 @@
 package com.frei.app.presentation.expenses
 
 import android.widget.Toast
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
@@ -32,6 +34,7 @@ import androidx.compose.material.icons.filled.Flight
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.ShoppingBag
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,13 +45,18 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,9 +76,7 @@ import com.frei.app.data.model.Expense
 import com.frei.app.data.model.ExpenseCategory
 import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.TripExpenseGroup
-import com.frei.app.ui.expenses.ExpenseViewMode
-import com.frei.app.ui.expenses.ExpensesUiState
-import com.frei.app.ui.expenses.ExpensesViewModel
+import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -88,6 +94,7 @@ internal object FreiExpenseColors {
     val BlueSoft = Color(0xFFE9EFFD)
     val Surface = Color(0xFFFFFFFF)
     val Background = Color(0xFFE8E7EF)
+    val DangerRed = Color(0xFFE23F3F)
 }
 
 internal fun ExpenseCategory.icon(): ImageVector = when (this) {
@@ -144,7 +151,21 @@ fun ExpensesScreen(
             onFilterClick = onFilterClick,
             onEditBudgetClick = { showBudgetDialog = true },
             onViewModeChange = viewModel::setViewMode,
-            onCategorySelected = viewModel::setCategoryFilter
+            onCategorySelected = viewModel::setCategoryFilter,
+            onDeleteExpense = { expense ->
+                viewModel.deleteExpense(
+                    expense = expense,
+                    onResult = { result ->
+                        result.onFailure { error ->
+                            Toast.makeText(
+                                context,
+                                error.message ?: "Couldn't delete the expense. Please try again.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                )
+            }
         )
         FloatingActionButton(
             onClick = { showAddSheet = true },
@@ -291,7 +312,8 @@ private fun ExpensesScreenContent(
     onFilterClick: () -> Unit,
     onEditBudgetClick: () -> Unit,
     onViewModeChange: (ExpenseViewMode) -> Unit,
-    onCategorySelected: (ExpenseCategory?) -> Unit
+    onCategorySelected: (ExpenseCategory?) -> Unit,
+    onDeleteExpense: (Expense) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -315,12 +337,16 @@ private fun ExpensesScreenContent(
             uiState.groupedByDate.forEach { (section, expenses) ->
                 item { SectionLabel(section) }
                 items(expenses, key = { it.id }) { expense ->
-                    ExpenseRow(expense = expense, showTripTag = true)
+                    ExpenseRow(
+                        expense = expense,
+                        showTripTag = true,
+                        onDeleteConfirmed = { onDeleteExpense(expense) }
+                    )
                 }
             }
         } else {
             items(uiState.groupedByTrip, key = { it.tripId }) { group ->
-                TripGroupCard(group)
+                TripGroupCard(group = group, onDeleteExpense = onDeleteExpense)
             }
         }
     }
@@ -577,57 +603,163 @@ private fun SectionLabel(text: String) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ExpenseRow(expense: Expense, showTripTag: Boolean, flatBackground: Color = FreiExpenseColors.Surface) {
-    Surface(
-        modifier = Modifier
-            .padding(horizontal = 22.dp, vertical = 5.dp)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = flatBackground
-    ) {
-        Row(
-            modifier = Modifier.padding(13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(expense.category.colorSoft()),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(expense.category.icon(), contentDescription = null, tint = expense.category.color())
-            }
+private fun ExpenseRow(
+    expense: Expense,
+    showTripTag: Boolean,
+    flatBackground: Color = FreiExpenseColors.Surface,
+    onDeleteConfirmed: () -> Unit
+) {
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    expense.title,
-                    fontSize = 14.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = FreiExpenseColors.Ink,
-                    maxLines = 1
-                )
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    if (showTripTag && expense.tripName != null) {
-                        Tag(text = expense.tripName, background = FreiExpenseColors.PurpleSoft, color = FreiExpenseColors.Purple)
-                    }
-                    if (expense.source == ExpenseSource.AUTO) {
-                        Tag(text = "Auto", background = FreiExpenseColors.TealSoft, color = FreiExpenseColors.Teal)
-                    } else {
-                        Text("Manual", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = FreiExpenseColors.InkMuted)
+    val dismissState = rememberSwipeToDismissBoxState(
+        confirmValueChange = { targetValue ->
+            if (targetValue == SwipeToDismissBoxValue.EndToStart) {
+                // Don't let the swipe auto-commit the delete. Reveal the confirm
+                // dialog instead, and only remove the row once the user confirms.
+                showConfirmDialog = true
+            }
+            false
+        }
+    )
+
+    SwipeToDismissBox(
+        state = dismissState,
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = true,
+        backgroundContent = { ExpenseRowDeleteBackground(dismissState) }
+    ) {
+        Surface(
+            modifier = Modifier
+                .padding(horizontal = 22.dp, vertical = 5.dp)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = flatBackground
+        ) {
+            Row(
+                modifier = Modifier.padding(13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(expense.category.colorSoft()),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(expense.category.icon(), contentDescription = null, tint = expense.category.color())
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        expense.title,
+                        fontSize = 14.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = FreiExpenseColors.Ink,
+                        maxLines = 1
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                        if (showTripTag && expense.tripName != null) {
+                            Tag(text = expense.tripName, background = FreiExpenseColors.PurpleSoft, color = FreiExpenseColors.Purple)
+                        }
+                        if (expense.source == ExpenseSource.AUTO) {
+                            Tag(text = "Auto", background = FreiExpenseColors.TealSoft, color = FreiExpenseColors.Teal)
+                        } else {
+                            Text("Manual", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = FreiExpenseColors.InkMuted)
+                        }
                     }
                 }
-            }
 
-            Text(
-                formatInr(expense.amount),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = FreiExpenseColors.Ink
-            )
+                Text(
+                    formatInr(expense.amount),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = FreiExpenseColors.Ink
+                )
+            }
         }
+    }
+
+    if (showConfirmDialog) {
+        ExpenseDeleteConfirmDialog(
+            title = "Delete expense?",
+            message = "\"${expense.title}\" (${formatInr(expense.amount)}) will be removed. This can't be undone.",
+            onConfirm = {
+                showConfirmDialog = false
+                onDeleteConfirmed()
+            },
+            onDismiss = {
+                showConfirmDialog = false
+                // Snap the row back closed since the user backed out of the delete.
+                scope.launch { dismissState.reset() }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ExpenseDeleteConfirmDialog(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, fontWeight = FontWeight.ExtraBold, color = FreiExpenseColors.Ink) },
+        text = { Text(message, color = FreiExpenseColors.InkMuted, fontSize = 13.5.sp) },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = FreiExpenseColors.DangerRed,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Delete", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = FreiExpenseColors.Background,
+                    contentColor = FreiExpenseColors.Ink
+                )
+            ) {
+                Text("Cancel", fontWeight = FontWeight.Bold)
+            }
+        },
+        containerColor = FreiExpenseColors.Surface
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExpenseRowDeleteBackground(dismissState: SwipeToDismissBoxState) {
+    val isArmed = dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isArmed) FreiExpenseColors.DangerRed else FreiExpenseColors.DangerRed.copy(alpha = 0.35f),
+        label = "expenseDeleteBackground"
+    )
+
+    Box(
+        modifier = Modifier
+            .padding(horizontal = 22.dp, vertical = 5.dp)
+            .fillMaxSize()
+            .clip(RoundedCornerShape(16.dp))
+            .background(backgroundColor),
+        contentAlignment = Alignment.CenterEnd
+    ) {
+        Icon(
+            Icons.Filled.Delete,
+            contentDescription = "Delete expense",
+            tint = Color.White,
+            modifier = Modifier.padding(end = 22.dp)
+        )
     }
 }
 
@@ -645,7 +777,7 @@ private fun Tag(text: String, background: Color, color: Color) {
 }
 
 @Composable
-private fun TripGroupCard(group: TripExpenseGroup) {
+private fun TripGroupCard(group: TripExpenseGroup, onDeleteExpense: (Expense) -> Unit) {
     Surface(
         modifier = Modifier
             .padding(horizontal = 22.dp, vertical = 7.dp)
@@ -677,7 +809,12 @@ private fun TripGroupCard(group: TripExpenseGroup) {
             }
             Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                 group.expenses.forEach { expense ->
-                    ExpenseRow(expense = expense, showTripTag = false, flatBackground = FreiExpenseColors.Background)
+                    ExpenseRow(
+                        expense = expense,
+                        showTripTag = false,
+                        flatBackground = FreiExpenseColors.Background,
+                        onDeleteConfirmed = { onDeleteExpense(expense) }
+                    )
                 }
             }
         }

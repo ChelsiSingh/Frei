@@ -1,6 +1,7 @@
 package com.frei.app.presentation.mytrips
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -9,10 +10,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,9 +24,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Hotel
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Savings
+import androidx.compose.material.icons.outlined.Circle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
@@ -45,10 +61,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.frei.app.data.model.Expense
 import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.Trip
@@ -58,7 +78,6 @@ import com.frei.app.data.repository.FlightBookingRecord
 import com.frei.app.data.repository.HotelBookingRecord
 import com.frei.app.data.repository.PackingRepository
 import com.frei.app.presentation.booking.flight.FreiInk
-import com.frei.app.presentation.packing.CategoryCard
 import com.frei.app.presentation.packing.InputDialog
 import com.frei.app.presentation.packing.PackingCategory
 import com.frei.app.presentation.packing.PackingItem
@@ -73,6 +92,11 @@ import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 private val FreiPurple = Color(0xFF6C3CF0)
+private val FreiPurpleLight = Color(0xFFF0EAFB)
+private val FreiTeal = Color(0xFF14B8A6)
+private val FreiTealLight = Color(0xFFE5F9F6)
+private val FreiLine = Color(0xFFECE8F5)
+private val FreiInkDim = Color(0xFF6F6C79)
 private val FreiLightBg = Color(0xFFF7F6FB)
 
 // ---------- Status + formatting helpers ----------
@@ -118,6 +142,322 @@ private fun hotelDateInstant(dateStr: String): Instant? = runCatching {
     LocalDate.parse(dateStr).atStartOfDay(ZoneId.systemDefault()).toInstant()
 }.getOrNull()
 
+// ---------- Trip tab building blocks ----------
+
+@Composable
+private fun TripSectionLabel(text: String) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.ExtraBold,
+        color = FreiInkDim,
+        letterSpacing = 0.5.sp,
+        modifier = Modifier.padding(start = 4.dp, top = 22.dp, bottom = 10.dp)
+    )
+}
+
+@Composable
+private fun TripDetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: Color,
+    iconBg: Color,
+    label: String,
+    value: String,
+    badge: String? = null
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 18.dp, vertical = 16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(20.dp))
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = label, style = MaterialTheme.typography.labelSmall, color = FreiInkDim, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = value, style = MaterialTheme.typography.bodyLarge, color = FreiInk, fontWeight = FontWeight.Bold)
+        }
+        if (badge != null) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(FreiTealLight)
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(text = badge, color = FreiTeal, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PackingCategorySection(
+    category: PackingCategory,
+    onToggleItem: (String) -> Unit,
+    onAddItemClick: () -> Unit,
+    onDeleteCategory: () -> Unit,
+    onDeleteItem: (PackingItem) -> Unit
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    val packedCount = category.items.count { it.isPacked }
+
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, FreiLine),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(start = 18.dp, top = 16.dp, end = 8.dp, bottom = 14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = category.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = FreiInk
+                    )
+                    if (category.items.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "$packedCount of ${category.items.size} packed",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = FreiInkDim
+                        )
+                    }
+                }
+                Box {
+                    IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(34.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Category options",
+                            tint = FreiInkDim
+                        )
+                    }
+                    DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                        DropdownMenuItem(
+                            text = { Text("Delete category", color = Color(0xFFE0453C), fontWeight = FontWeight.SemiBold) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Delete, contentDescription = null, tint = Color(0xFFE0453C))
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onDeleteCategory()
+                            }
+                        )
+                    }
+                }
+            }
+
+            if (category.items.isEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "No items added yet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FreiInkDim,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.height(6.dp))
+                HorizontalDivider(color = FreiLine)
+                category.items.forEach { item ->
+                    PackingItemRow(
+                        item = item,
+                        onToggle = { onToggleItem(item.id) },
+                        onDelete = { onDeleteItem(item) }
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier
+                    .padding(top = 6.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable { onAddItemClick() }
+                    .padding(vertical = 8.dp, horizontal = 6.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    tint = FreiPurple,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(text = "Add item", color = FreiPurple, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PackingItemRow(item: PackingItem, onToggle: () -> Unit, onDelete: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onToggle() }
+            .padding(vertical = 9.dp, horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = if (item.isPacked) Icons.Default.CheckCircle else Icons.Outlined.Circle,
+            contentDescription = null,
+            tint = if (item.isPacked) FreiTeal else Color(0xFFCFCBDE),
+            modifier = Modifier.size(21.dp)
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = item.name,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (item.isPacked) FreiInkDim else FreiInk,
+            textDecoration = if (item.isPacked) TextDecoration.LineThrough else TextDecoration.None,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = onDelete, modifier = Modifier.size(30.dp)) {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = "Remove ${item.name}",
+                tint = Color(0xFFCFCBDE),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+    }
+}
+
+
+@Composable
+private fun TripDetailsTab(trip: Trip) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(FreiLightBg),
+        contentPadding = PaddingValues(20.dp)
+    ) {
+        item {
+            // Hero card
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Brush.linearGradient(colors = listOf(FreiPurple, Color(0xFF8B5FE0))))
+                    .padding(20.dp)
+            ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.75f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "DESTINATION",
+                            color = Color.White.copy(alpha = 0.75f),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.6.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = trip.destination,
+                        color = Color.White,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "Trip details at a glance",
+                        color = Color.White.copy(alpha = 0.85f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            TripSectionLabel("Trip Info")
+
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, FreiLine),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    TripDetailRow(
+                        icon = Icons.Default.Group,
+                        iconTint = FreiPurple,
+                        iconBg = FreiPurpleLight,
+                        label = "Number of people",
+                        value = if (trip.travelers == 1) "1 traveler" else "${trip.travelers} travelers"
+                    )
+                    HorizontalDivider(color = FreiLine)
+                    TripDetailRow(
+                        icon = Icons.Default.Flight,
+                        iconTint = FreiTeal,
+                        iconBg = FreiTealLight,
+                        label = "Transport",
+                        value = trip.transport
+                    )
+                    HorizontalDivider(color = FreiLine)
+                    TripDetailRow(
+                        icon = Icons.Default.Hotel,
+                        iconTint = FreiPurple,
+                        iconBg = FreiPurpleLight,
+                        label = "Stay type",
+                        value = trip.stay
+                    )
+                }
+            }
+
+            TripSectionLabel("Budget")
+
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                border = BorderStroke(1.dp, FreiLine),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(18.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(FreiTealLight),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(imageVector = Icons.Default.Savings, contentDescription = null, tint = FreiTeal, modifier = Modifier.size(20.dp))
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
+                    Column {
+                        Text(text = "ALLOCATED", style = MaterialTheme.typography.labelSmall, color = FreiInkDim, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "₹${trip.budget.ifBlank { "0" }}",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = FreiInk,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 // Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -139,6 +479,7 @@ fun MyTripScreen(
     var isLoadingPacking by remember { mutableStateOf(true) }
     var showAddCategoryDialog by remember { mutableStateOf(false) }
     var activeCategoryForNewItem by remember { mutableStateOf<PackingCategory?>(null) }
+    var categoryPendingDelete by remember { mutableStateOf<PackingCategory?>(null) }
 
     val currentUid = remember { FirebaseAuth.getInstance().currentUser?.uid.orEmpty() }
 
@@ -154,6 +495,7 @@ fun MyTripScreen(
     var isLoadingExpenses by remember { mutableStateOf(true) }
 
     var showAddExpenseDialog by remember { mutableStateOf(false) }
+    var expensePendingDelete by remember { mutableStateOf<Expense?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -331,37 +673,7 @@ fun MyTripScreen(
                 } else {
                     tripDetails?.let { trip ->
                         when (selectedTab) {
-                            TripTab.Trip -> {
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(20.dp)
-                                ) {
-                                    Text(
-                                        text = " Destination: ${trip.destination}",
-                                        style = MaterialTheme.typography.titleLarge
-                                    )
-                                    HorizontalDivider(color = Color(0xFFE8E7EF))
-
-                                    Text(
-                                        text = "Number of people: ${trip.travelers}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        text = "Budget Allocated: ₹${trip.budget.ifBlank { "0" }}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        text = "Transport: ${trip.transport}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                    Text(
-                                        text = "Stay Type: ${trip.stay}",
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
+                            TripTab.Trip -> TripDetailsTab(trip = trip)
 
                             TripTab.Packing -> {
                                 Box(
@@ -387,15 +699,23 @@ fun MyTripScreen(
                                             verticalArrangement = Arrangement.spacedBy(16.dp)
                                         ) {
                                             items(packingCategories, key = { it.id }) { category ->
-                                                CategoryCard(
+                                                PackingCategorySection(
                                                     category = category,
-                                                    onAddItemClick = { activeCategoryForNewItem = category },
-                                                    onItemToggle = { itemId ->
+                                                    onToggleItem = { itemId ->
                                                         packingCategories = packingCategories.map { cat ->
                                                             if (cat.id == category.id) {
                                                                 cat.copy(items = cat.items.map { item ->
                                                                     if (item.id == itemId) item.copy(isPacked = !item.isPacked) else item
                                                                 })
+                                                            } else cat
+                                                        }
+                                                    },
+                                                    onAddItemClick = { activeCategoryForNewItem = category },
+                                                    onDeleteCategory = { categoryPendingDelete = category },
+                                                    onDeleteItem = { item ->
+                                                        packingCategories = packingCategories.map { cat ->
+                                                            if (cat.id == category.id) {
+                                                                cat.copy(items = cat.items.filterNot { it.id == item.id })
                                                             } else cat
                                                         }
                                                     }
@@ -583,7 +903,8 @@ fun MyTripScreen(
                                                 Row(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
-                                                        .padding(16.dp),
+                                                        .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.SpaceBetween
                                                 ) {
                                                     Column {
@@ -594,11 +915,20 @@ fun MyTripScreen(
                                                             style = MaterialTheme.typography.bodySmall
                                                         )
                                                     }
-                                                    Text(
-                                                        text = "₹${expense.amount}",
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = FreiPurple
-                                                    )
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Text(
+                                                            text = "₹${expense.amount}",
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = FreiPurple
+                                                        )
+                                                        IconButton(onClick = { expensePendingDelete = expense }) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.Delete,
+                                                                contentDescription = "Delete ${expense.title}",
+                                                                tint = Color(0xFF8C89A3)
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -667,6 +997,45 @@ fun MyTripScreen(
                             }
                             activeCategoryForNewItem = null
                         }
+                    )
+                }
+
+                categoryPendingDelete?.let { category ->
+                    ConfirmDeleteDialog(
+                        title = "Delete this category?",
+                        message = "\"${category.name}\" and all ${category.items.size} item(s) in it will be removed from your packing list.",
+                        onConfirm = {
+                            val updatedCategories = packingCategories.filterNot { it.id == category.id }
+                            packingCategories = updatedCategories
+                            PackingRepository.savePackingListToFirestore(
+                                userId = currentUid,
+                                tripId = tripId,
+                                categories = updatedCategories,
+                                onSuccess = {},
+                                onFailure = {
+                                    Toast.makeText(context, "Couldn't delete category", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                            categoryPendingDelete = null
+                        },
+                        onDismiss = { categoryPendingDelete = null }
+                    )
+                }
+
+                expensePendingDelete?.let { expense ->
+                    ConfirmDeleteDialog(
+                        title = "Delete this expense?",
+                        message = "\"${expense.title}\" (₹${expense.amount}) will be removed from this trip's expenses.",
+                        onConfirm = {
+                            coroutineScope.launch {
+                                runCatching { expenseRepository.deleteExpense(expense) }
+                                    .onFailure {
+                                        Toast.makeText(context, "Couldn't delete expense", Toast.LENGTH_SHORT).show()
+                                    }
+                            }
+                            expensePendingDelete = null
+                        },
+                        onDismiss = { expensePendingDelete = null }
                     )
                 }
             }

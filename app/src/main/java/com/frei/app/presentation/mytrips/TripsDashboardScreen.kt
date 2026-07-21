@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -55,6 +57,7 @@ fun TripsDashboardScreen(
 ) {
     var tripsList by remember { mutableStateOf<List<Trip>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var tripPendingDelete by remember { mutableStateOf<Trip?>(null) }
 
     DisposableEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
@@ -138,22 +141,51 @@ fun TripsDashboardScreen(
                                 .clickable { onTripClick(trip.id) },
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFF7F6FB))
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text(
-                                    text = trip.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = Color(0xFF1B1830)
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "📍 ${trip.destination}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = Color(0xFF8C89A3)
-                                )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp, top = 16.dp, bottom = 16.dp, end = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = trip.title,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color(0xFF1B1830)
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "📍 ${trip.destination}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color(0xFF8C89A3)
+                                    )
+                                }
+                                IconButton(onClick = { tripPendingDelete = trip }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Delete ${trip.title}",
+                                        tint = Color(0xFF8C89A3)
+                                    )
+                                }
                             }
                         }
                     }
                 }
+            }
+
+            tripPendingDelete?.let { trip ->
+                ConfirmDeleteDialog(
+                    title = "Delete this trip?",
+                    message = "\"${trip.title}\" and everything saved under it — packing list, bookings, expenses — will be removed. This can't be undone.",
+                    onConfirm = {
+                        FirebaseFirestore.getInstance()
+                            .collection("trips")
+                            .document(trip.id)
+                            .delete()
+                        tripPendingDelete = null
+                    },
+                    onDismiss = { tripPendingDelete = null }
+                )
             }
         }
     }

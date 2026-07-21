@@ -16,6 +16,7 @@ interface ExpenseRepository {
     fun observeMonthlyBudget(userId: String): Flow<Double>
     fun observeUserTrips(userId: String): Flow<List<TripOption>>
     suspend fun addExpense(expense: Expense)
+    suspend fun deleteExpense(expense: Expense)
     suspend fun setMonthlyBudget(userId: String, amount: Double)
     suspend fun getTripName(tripId: String): String?
 }
@@ -93,6 +94,18 @@ class FirestoreExpenseRepository @Inject constructor(
     override suspend fun addExpense(expense: Expense) {
         firestore.collection(EXPENSES_COLLECTION)
             .add(expense)
+            .await()
+    }
+
+    // expense.id is populated by @DocumentId, meaning Firestore fills it in
+    // from the document's real path segment when reading, but never writes
+    // it into the document's stored fields. So it IS the real Firestore
+    // document ID — no need to query by a field, just delete by reference.
+    override suspend fun deleteExpense(expense: Expense) {
+        if (expense.id.isEmpty()) return
+        firestore.collection(EXPENSES_COLLECTION)
+            .document(expense.id)
+            .delete()
             .await()
     }
 

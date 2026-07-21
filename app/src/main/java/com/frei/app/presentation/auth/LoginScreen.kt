@@ -97,7 +97,6 @@ fun LoginScreen(
 
         Button(
             onClick = {
-                // Defensive Check: Make sure they entered something
                 if (email.isBlank() || password.isBlank()) {
                     Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                     return@Button
@@ -105,7 +104,6 @@ fun LoginScreen(
 
                 isAuthenticating = true
 
-                // FIXED: Sign in using email & password fields instead of anonymously
                 FirebaseAuth.getInstance().signInWithEmailAndPassword(email.trim(), password)
                     .addOnSuccessListener {
                         isAuthenticating = false

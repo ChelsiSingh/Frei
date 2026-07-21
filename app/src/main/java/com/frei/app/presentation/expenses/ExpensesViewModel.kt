@@ -1,28 +1,24 @@
-package com.frei.app.ui.expenses
+package com.frei.app.presentation.expenses
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.frei.app.data.repository.ExpenseRepository
 import com.frei.app.data.model.CategoryTotal
 import com.frei.app.data.model.Expense
 import com.frei.app.data.model.ExpenseCategory
 import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.TripExpenseGroup
 import com.frei.app.data.model.TripOption
-import com.frei.app.presentation.expenses.groupByDateSection
-import com.frei.app.presentation.expenses.groupByTrip
-import com.frei.app.presentation.expenses.isSameMonth
-import com.frei.app.presentation.expenses.toCategoryTotals
+import com.frei.app.data.repository.ExpenseRepository
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.Date
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Date
+import javax.inject.Inject
 
 enum class ExpenseViewMode { FLAT, BY_TRIP }
 
@@ -118,6 +114,17 @@ class ExpensesViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val result = runCatching { repository.setMonthlyBudget(userId, amount) }
+            onResult(result)
+        }
+    }
+
+    fun deleteExpense(expense: Expense, onResult: (Result<Unit>) -> Unit = {}) {
+        if (userId.isEmpty()) {
+            onResult(Result.failure(IllegalStateException("You need to be signed in to delete an expense.")))
+            return
+        }
+        viewModelScope.launch {
+            val result = runCatching { repository.deleteExpense(expense) }
             onResult(result)
         }
     }
