@@ -22,6 +22,7 @@ sealed class Screen(val route: String) {
         data object Profile : Screen("profile")
 
         data object Notifications : Screen("notifications")
+        data object Splash : Screen("splash")
 
 
         data object FlightList : Screen(

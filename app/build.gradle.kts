@@ -142,4 +142,7 @@ dependencies {
 
     //Notification
     implementation("com.google.firebase:firebase-messaging")
+
+    //Splash screen
+    implementation("androidx.core:core-splashscreen:1.0.1")
 }

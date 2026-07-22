@@ -17,6 +17,7 @@
         android:theme="@style/Theme.Frei">
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.Frei.Splash"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>

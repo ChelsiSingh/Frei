@@ -46,6 +46,7 @@ import com.frei.app.presentation.notification.NotificationsScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
 import com.frei.app.presentation.profile.ProfileScreen
+import com.frei.app.presentation.splash.SplashScreen
 
 
 @Composable
@@ -54,8 +55,9 @@ fun FreiNavGraph() {
 
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Splash.route
     ) {
+
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateToRegister = { navController.navigate(Screen.Register.route) },
@@ -96,6 +98,16 @@ fun FreiNavGraph() {
                 onExpensesClick = { navController.navigate(Screen.Expenses.route) },
                 onNotificationClick = { navController.navigate(Screen.Notifications.route) },
                 onProfileClick = { navController.navigate(Screen.Profile.route) }
+            )
+        }
+
+        composable("splash") {
+            SplashScreen(
+                onSplashFinished = {
+                    navController.navigate("home") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
             )
         }
 
