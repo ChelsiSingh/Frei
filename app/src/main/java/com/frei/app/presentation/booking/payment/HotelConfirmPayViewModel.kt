@@ -79,8 +79,33 @@ class HotelConfirmPayViewModel @Inject constructor(
             paymentManager.results.collect { result ->
                 when (result) {
                     is RazorpayResult.Success -> verify(result)
-                    is RazorpayResult.Failure -> _uiState.value = HotelPaymentUiState.Failed(result.description)
+                    is RazorpayResult.Failure -> {
+                        if (result.code == com.razorpay.Checkout.PAYMENT_CANCELED) {
+                            lastReadyState?.let { _uiState.value = it }
+                        } else {
+                            _uiState.value = HotelPaymentUiState.Failed(result.description)
+                        }
+                    }
                 }
+            }
+        }
+    }
+
+    fun retry() {
+        val ready = lastReadyState
+        if (ready != null) {
+            _uiState.value = ready
+        } else {
+            viewModelScope.launch {
+                hotelRepository.getHotel(hotelId)
+                    .onSuccess { hotel ->
+                        val roomCost = hotel.pricePerNight.toDouble() * nights
+                        val taxesAndCharges = roomCost * TAX_RATE
+                        val ready = HotelPaymentUiState.Ready(hotel, roomCost, taxesAndCharges, roomCost + taxesAndCharges)
+                        lastReadyState = ready
+                        _uiState.value = ready
+                    }
+                    .onFailure { _uiState.value = HotelPaymentUiState.Failed("Couldn't load booking details.") }
             }
         }
     }

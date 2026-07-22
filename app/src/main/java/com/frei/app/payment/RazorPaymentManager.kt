@@ -54,9 +54,12 @@ class RazorpayPaymentManager @Inject constructor() {
         }
     }
 
-    // Called from MainActivity's PaymentResultWithDataListener callbacks
+
     fun onPaymentSuccess(paymentId: String, paymentData: PaymentData?) {
-        android.util.Log.d("RazorpayDebug", "paymentId=$paymentId orderId=${paymentData?.orderId} signature=${paymentData?.signature}")
+        android.util.Log.d(
+            "RazorpayDebug",
+            "paymentId=$paymentId orderId=${paymentData?.orderId} signature=${paymentData?.signature}"
+        )
         _results.tryEmit(
             RazorpayResult.Success(
                 paymentId = paymentId,
@@ -67,6 +70,25 @@ class RazorpayPaymentManager @Inject constructor() {
     }
 
     fun onPaymentError(code: Int, description: String) {
-        _results.tryEmit(RazorpayResult.Failure(code, description))
+        val userMessage = parseRazorpayError(description)
+        _results.tryEmit(RazorpayResult.Failure(code, userMessage))
+    }
+
+    private fun parseRazorpayError(rawResponse: String): String {
+        return try {
+            val json = JSONObject(rawResponse)
+            val error = json.optJSONObject("error")
+            val reason = error?.optString("reason").orEmpty()
+            val description = error?.optString("description").orEmpty()
+
+            when {
+                reason == "payment_error" -> "Payment could not be completed. Please check your payment details and try again."
+                reason.isNotBlank() -> reason.replace("_", " ").replaceFirstChar { it.uppercase() }
+                description.isNotBlank() && description != "undefined" -> description
+                else -> "Payment failed. Please try again."
+            }
+        } catch (e: Exception) {
+            rawResponse.ifBlank { "Payment failed. Please try again." }
+        }
     }
 }

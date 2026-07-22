@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Button
@@ -97,7 +98,36 @@ fun FlightConfirmPayScreen(
             }
 
             is PaymentUiState.Failed -> Box(Modifier.fillMaxSize().padding(innerPadding), Alignment.Center) {
-                Text(state.message, color = Color.Red, fontWeight = FontWeight.Bold, modifier = Modifier.padding(24.dp))
+                Column(
+                    Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.Close, contentDescription = null,
+                        tint = Color(0xFFD9534F),
+                        modifier = Modifier.size(48.dp).clip(RoundedCornerShape(50)).background(Color(0xFFFCEEEE)).padding(10.dp)
+                    )
+                    Spacer(Modifier.height(14.dp))
+                    Text("Payment Failed", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, color = FreiInk)
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        state.message, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = FreiSubtext,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    Button(
+                        onClick = { viewModel.retry() },
+                        colors = ButtonDefaults.buttonColors(containerColor = FreiPrimary),
+                        shape = RoundedCornerShape(14.dp),
+                        modifier = Modifier.fillMaxWidth().height(48.dp)
+                    ) {
+                        Text("Try Again", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    androidx.compose.material3.TextButton(onClick = onBackClick) {
+                        Text("Go Back", color = FreiSubtext, fontWeight = FontWeight.SemiBold)
+                    }
+                }
             }
 
             PaymentUiState.Success -> Column(

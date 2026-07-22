@@ -66,11 +66,21 @@ class FlightConfirmPayViewModel @Inject constructor(
             paymentManager.results.collect { result ->
                 when (result) {
                     is RazorpayResult.Success -> verify(result)
-                    is RazorpayResult.Failure -> _uiState.value =
-                        PaymentUiState.Failed(result.description)
+                    is RazorpayResult.Failure -> {
+                        if (result.code == com.razorpay.Checkout.PAYMENT_CANCELED) {
+                            lastReadyState?.let { _uiState.value = it }
+                        } else {
+                            _uiState.value = PaymentUiState.Failed(result.description)
+                        }
+                    }
                 }
             }
         }
+    }
+
+    fun retry() {
+        val ready = lastReadyState
+        if (ready != null) _uiState.value = ready else loadFlight()
     }
 
     private fun String.urlDecoded(): String =
