@@ -54,35 +54,39 @@ sealed class Screen(val route: String) {
         }
 
         data object HotelList : Screen(
-                "hotel_list/{city_id}/{city_name}?min_stars={min_stars}&tripId={tripId}"
+                "hotel_list/{city_id}/{city_name}?min_stars={min_stars}&checkIn={checkIn}&checkOut={checkOut}&tripId={tripId}"
         ) {
                 fun createRoute(
                         cityId: String,
                         cityName: String,
                         minStars: Double? = null,
+                        checkInMillis: Long,
+                        checkOutMillis: Long,
                         tripId: String? = null
                 ): String {
                         val encodedName = java.net.URLEncoder.encode(cityName, "UTF-8")
                         val base = "hotel_list/$cityId/$encodedName"
                         val params = buildList {
                                 if (minStars != null) add("min_stars=$minStars")
+                                add("checkIn=$checkInMillis")
+                                add("checkOut=$checkOutMillis")
                                 if (!tripId.isNullOrBlank()) add("tripId=$tripId")
                         }
-                        return if (params.isEmpty()) base else "$base?${params.joinToString("&")}"
+                        return "$base?${params.joinToString("&")}"
                 }
         }
 
-        data object HotelDetails : Screen("hotel_details/{hotelId}?tripId={tripId}") {
-                fun createRoute(hotelId: String, tripId: String? = null): String {
-                        val base = "hotel_details/$hotelId"
-                        return if (tripId != null) "$base?tripId=$tripId" else base
+        data object HotelDetails : Screen("hotel_details/{hotelId}?checkIn={checkIn}&checkOut={checkOut}&tripId={tripId}") {
+                fun createRoute(hotelId: String, checkInMillis: Long, checkOutMillis: Long, tripId: String? = null): String {
+                        val base = "hotel_details/$hotelId?checkIn=$checkInMillis&checkOut=$checkOutMillis"
+                        return if (tripId != null) "$base&tripId=$tripId" else base
                 }
         }
 
-        data object HotelGuestDetails : Screen("hotel_guest_details/{hotelId}?tripId={tripId}") {
-                fun createRoute(hotelId: String, tripId: String? = null): String {
-                        val base = "hotel_guest_details/$hotelId"
-                        return if (tripId != null) "$base?tripId=$tripId" else base
+        data object HotelGuestDetails : Screen("hotel_guest_details/{hotelId}?checkIn={checkIn}&checkOut={checkOut}&tripId={tripId}") {
+                fun createRoute(hotelId: String, checkInMillis: Long, checkOutMillis: Long, tripId: String? = null): String {
+                        val base = "hotel_guest_details/$hotelId?checkIn=$checkInMillis&checkOut=$checkOutMillis"
+                        return if (tripId != null) "$base&tripId=$tripId" else base
                 }
         }
 

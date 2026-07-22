@@ -73,6 +73,8 @@ private fun formatDate(millis: Long): String =
 @Composable
 fun HotelGuestDetailsScreen(
     viewModel: HotelDetailsViewModel,
+    prefilledCheckInMillis: Long?,
+    prefilledCheckOutMillis: Long?,
     onBackClick: () -> Unit,
     onContinueClick: (
         hotelId: String, guests: Int, name: String, email: String, phone: String,
@@ -108,6 +110,8 @@ fun HotelGuestDetailsScreen(
 
             is HotelDetailUiState.Success -> GuestDetailsContent(
                 hotel = state.hotel,
+                prefilledCheckInMillis = prefilledCheckInMillis,
+                prefilledCheckOutMillis = prefilledCheckOutMillis,
                 innerPadding = innerPadding,
                 onContinueClick = onContinueClick
             )
@@ -118,6 +122,8 @@ fun HotelGuestDetailsScreen(
 @Composable
 private fun GuestDetailsContent(
     hotel: Hotel,
+    prefilledCheckInMillis: Long?,
+    prefilledCheckOutMillis: Long?,
     innerPadding: PaddingValues,
     onContinueClick: (
         hotelId: String, guests: Int, name: String, email: String, phone: String,
@@ -129,8 +135,8 @@ private fun GuestDetailsContent(
     var lastName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var mobile by remember { mutableStateOf("") }
-    var checkInMillis by remember { mutableStateOf<Long?>(null) }
-    var checkOutMillis by remember { mutableStateOf<Long?>(null) }
+    var checkInMillis by remember { mutableStateOf(prefilledCheckInMillis) }
+    var checkOutMillis by remember { mutableStateOf(prefilledCheckOutMillis) }
 
     var additionalGuests by remember { mutableStateOf(listOf<AdditionalGuest>()) }
     val emailRegex = remember { Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$") }
@@ -148,6 +154,7 @@ private fun GuestDetailsContent(
             email.matches(emailRegex) && mobile.length == 10
     val areAdditionalGuestsValid = additionalGuests.all { it.firstName.isNotBlank() && it.lastName.isNotBlank() }
     val isFormValid = isPrimaryValid && areAdditionalGuestsValid && areDatesValid
+
 
     Column(modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 18.dp)) {
         Column(modifier = Modifier.weight(1f)) {

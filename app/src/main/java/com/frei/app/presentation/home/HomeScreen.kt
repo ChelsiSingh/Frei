@@ -60,7 +60,9 @@ fun HomeScreen(
                 selectedIndex = 0,
                 onItemSelected = { index ->
                     when (index) {
-                        0 -> { /* Already home */ }
+                        0 -> { /* Already home */
+                        }
+
                         1 -> navController.navigate(Screen.Bookings.route)
                         2 -> navController.navigate(Screen.TripsDashboard.route)
                         3 -> navController.navigate(Screen.Profile.route)
@@ -73,7 +75,12 @@ fun HomeScreen(
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
-            contentPadding = PaddingValues(start = 14.dp, top = 40.dp, end = 14.dp, bottom = 150.dp),
+            contentPadding = PaddingValues(
+                start = 14.dp,
+                top = 40.dp,
+                end = 14.dp,
+                bottom = 150.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             item {
@@ -105,12 +112,14 @@ fun HomeScreen(
                             )
                         )
                     },
-                    onHotelSearchClicked = { cityId, cityName, minStars ->
+                    onHotelSearchClicked = { cityId, cityName, minStars, checkInMillis, checkOutMillis ->
                         navController.navigate(
                             Screen.HotelList.createRoute(
                                 cityId = cityId,
                                 cityName = cityName,
                                 minStars = minStars,
+                                checkInMillis = checkInMillis,
+                                checkOutMillis = checkOutMillis,
                                 tripId = tripId
                             )
                         )
@@ -126,7 +135,14 @@ fun HomeScreen(
             item {
                 RecommendedHotelsSection(
                     onHotelClick = { hotelId ->
-                        navController.navigate(Screen.HotelDetails.createRoute(hotelId, tripId))
+                        navController.navigate(
+                            Screen.HotelDetails.createRoute(
+                                hotelId = hotelId,
+                                checkInMillis = 0L,
+                                checkOutMillis = 0L,
+                                tripId = tripId
+                            )
+                        )
                     }
                 )
             }

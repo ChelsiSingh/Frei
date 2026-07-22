@@ -23,7 +23,10 @@ fun TripSearchSection(
         originId: String, destinationId: String, isRoundTrip: Boolean,
         departDate: Long?, returnDate: Long?, paxCount: Int
     ) -> Unit = { _, _, _, _, _, _ -> },
-    onHotelSearchClicked: (cityId: String, cityName: String, minStars: Double?) -> Unit = { _, _, _ -> }
+    onHotelSearchClicked: (
+        cityId: String, cityName: String, minStars: Double?,
+        checkInMillis: Long, checkOutMillis: Long
+    ) -> Unit = { _, _, _, _, _ -> }
 ) {
     var selectedMode by remember { mutableStateOf(BookingMode.FLIGHTS) }
 

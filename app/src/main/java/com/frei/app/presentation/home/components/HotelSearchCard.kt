@@ -49,6 +49,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.frei.app.data.model.hotel.City
 import com.frei.app.presentation.booking.hotel.CitySuggestionUiState
 import com.frei.app.presentation.booking.hotel.HotelViewModel
+import com.frei.app.presentation.booking.hotel.toLocalMidnightMillis
 import com.frei.app.ui.theme.FreiPurple
 import com.frei.app.ui.theme.FreiTeal
 import java.text.SimpleDateFormat
@@ -60,8 +61,10 @@ import java.util.Locale
 fun HotelSearchCard(
     viewModel: HotelViewModel,
     modifier: Modifier = Modifier,
-    // minStars is the ONLY param that's real right now — see note below.
-    onSearchClicked: (cityId: String, cityName: String, minStars: Double?) -> Unit = { _, _, _ -> }
+    onSearchClicked: (
+        cityId: String, cityName: String, minStars: Double?,
+        checkInMillis: Long, checkOutMillis: Long
+    ) -> Unit = { _, _, _, _, _ -> }
 ) {
     val citySuggestionState by viewModel.citySuggestionState.collectAsState()
     val citySuggestions = (citySuggestionState as? CitySuggestionUiState.Success)?.cities ?: emptyList()
@@ -79,6 +82,9 @@ fun HotelSearchCard(
     val checkOutString = dateRangeState.selectedEndDateMillis?.let { dateFormatter.format(Date(it)) } ?: "Select"
     var guestCount by remember { mutableIntStateOf(2) }
     var showGuestDropdown by remember { mutableStateOf(false) }
+    val canSearch = cityId != null &&
+            dateRangeState.selectedStartDateMillis != null &&
+            dateRangeState.selectedEndDateMillis != null
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -188,7 +194,14 @@ fun HotelSearchCard(
             Button(
                 onClick = {
                     val id = cityId
-                    if (id != null) onSearchClicked(id, cityText, selectedMinStars)
+                    val start = dateRangeState.selectedStartDateMillis
+                    val end = dateRangeState.selectedEndDateMillis
+                    if (id != null && start != null && end != null) {
+                        onSearchClicked(
+                            id, cityText, selectedMinStars,
+                            start.toLocalMidnightMillis(), end.toLocalMidnightMillis()
+                        )
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = FreiPurple),
@@ -200,10 +213,9 @@ fun HotelSearchCard(
                 Text("Search Hotels")
             }
 
-            if (!canSearch) {
-                Spacer(modifier = Modifier.height(6.dp))
+            if(!canSearch) {
                 Text(
-                    "Pick a city from the list so we search the right hotels.",
+                    "Pick a city and check-in/check-out dates so we search the right hotels.",
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )

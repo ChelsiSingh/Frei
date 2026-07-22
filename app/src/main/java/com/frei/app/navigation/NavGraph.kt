@@ -292,16 +292,20 @@ fun FreiNavGraph() {
                 navArgument("city_id") { type = NavType.StringType },
                 navArgument("city_name") { type = NavType.StringType },
                 navArgument("min_stars") { type = NavType.StringType; nullable = true; defaultValue = null },
+                navArgument("checkIn") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("checkOut") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
             val tripId = backStackEntry.arguments?.getString("tripId")
+            val checkInMillis = backStackEntry.arguments?.getLong("checkIn") ?: 0L
+            val checkOutMillis = backStackEntry.arguments?.getLong("checkOut") ?: 0L
             val viewModel: HotelListViewModel = hiltViewModel()
             HotelListScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onHotelClick = { hotel ->
-                    navController.navigate(Screen.HotelDetails.createRoute(hotel.id, tripId))
+                    navController.navigate(Screen.HotelDetails.createRoute(hotel.id, checkInMillis, checkOutMillis, tripId))
                 }
             )
         }
@@ -310,16 +314,20 @@ fun FreiNavGraph() {
             route = Screen.HotelDetails.route,
             arguments = listOf(
                 navArgument("hotelId") { type = NavType.StringType },
+                navArgument("checkIn") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("checkOut") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
             val tripId = backStackEntry.arguments?.getString("tripId")
+            val checkInMillis = backStackEntry.arguments?.getLong("checkIn") ?: 0L
+            val checkOutMillis = backStackEntry.arguments?.getLong("checkOut") ?: 0L
             val viewModel: HotelDetailsViewModel = hiltViewModel()
             HotelDetailsScreen(
                 viewModel = viewModel,
                 onBackClick = { navController.popBackStack() },
                 onReserveClick = { hotelId ->
-                    navController.navigate(Screen.HotelGuestDetails.createRoute(hotelId, tripId))
+                    navController.navigate(Screen.HotelGuestDetails.createRoute(hotelId, checkInMillis, checkOutMillis, tripId))
                 }
             )
         }
@@ -328,13 +336,19 @@ fun FreiNavGraph() {
             route = Screen.HotelGuestDetails.route,
             arguments = listOf(
                 navArgument("hotelId") { type = NavType.StringType },
+                navArgument("checkIn") { type = NavType.LongType; defaultValue = 0L },
+                navArgument("checkOut") { type = NavType.LongType; defaultValue = 0L },
                 navArgument("tripId") { type = NavType.StringType; nullable = true; defaultValue = null }
             )
         ) { backStackEntry ->
             val tripId = backStackEntry.arguments?.getString("tripId")
+            val checkInMillis = backStackEntry.arguments?.getLong("checkIn")?.takeIf { it != 0L }
+            val checkOutMillis = backStackEntry.arguments?.getLong("checkOut")?.takeIf { it != 0L }
             val viewModel: HotelDetailsViewModel = hiltViewModel()
             HotelGuestDetailsScreen(
                 viewModel = viewModel,
+                prefilledCheckInMillis = checkInMillis,
+                prefilledCheckOutMillis = checkOutMillis,
                 onBackClick = { navController.popBackStack() },
                 onContinueClick = { hotelId, guests, name, email, phone, nights, checkIn, checkOut ->
                     navController.navigate(
