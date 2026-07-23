@@ -59,7 +59,7 @@ fun ProfileScreen(
     onBackClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onPreviousTripsClick: () -> Unit,
-    onCustomerSupportClick: () -> Unit,
+    onContactUsClick: () -> Unit,
     onAboutAppClick: () -> Unit,
     onEditProfileClick: () -> Unit,
     onSignedOut: () -> Unit,
@@ -216,8 +216,8 @@ fun ProfileScreen(
                 ProfileMenuRow(
                     emoji = "\uD83C\uDFA7", // 🎧
                     iconBg = Color(0xFFEFE9FB),
-                    label = "Customer Support",
-                    onClick = onCustomerSupportClick
+                    label = "Contact Us",
+                    onClick = onContactUsClick
                 )
                 HorizontalDivider(color = FreiCardBorder)
                 ProfileMenuRow(

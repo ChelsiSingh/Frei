@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-// Matches the schema AuthRepository.register() writes to users/{uid}
 data class UserProfile(
     val userId: String = "",
     val firstName: String = "",

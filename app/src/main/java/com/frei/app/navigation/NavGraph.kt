@@ -45,6 +45,8 @@ import com.frei.app.presentation.newtrip.NewTripScreen
 import com.frei.app.presentation.notification.NotificationsScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
+import com.frei.app.presentation.profile.AboutAppScreen
+import com.frei.app.presentation.profile.ContactUsScreen
 import com.frei.app.presentation.profile.ProfileScreen
 import com.frei.app.presentation.splash.SplashScreen
 
@@ -188,14 +190,39 @@ fun FreiNavGraph() {
             ProfileScreen(
                 onSettingsClick = { Toast.makeText(ctx, "Settings — coming soon", Toast.LENGTH_SHORT).show()  },
                 onPreviousTripsClick = { navController.navigate(Screen.TripsDashboard.route) },
-                onCustomerSupportClick = { Toast.makeText(ctx, "Customer Support — coming soon", Toast.LENGTH_SHORT).show() },
-                onAboutAppClick = { Toast.makeText(ctx, "About App — coming soon", Toast.LENGTH_SHORT).show() },
+                onContactUsClick = { navController.navigate(Screen.ContactUs.route) },
+                onAboutAppClick = { navController.navigate(Screen.AboutApp.route) },
                 onEditProfileClick = { Toast.makeText(ctx, "Edit Profile — coming soon", Toast.LENGTH_SHORT).show() },
                 onBackClick = { navController.popBackStack() },
                 onSignedOut = {
                     navController.navigate(Screen.Login.route) {
                         popUpTo(0) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(Screen.ContactUs.route){
+            ContactUsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.AboutApp.route) {
+            val ctx = LocalContext.current
+            AboutAppScreen(
+                onBackClick = { navController.popBackStack() },
+                onContactClick = {
+                    Toast.makeText(ctx, "Contact us — coming soon", Toast.LENGTH_SHORT).show()
+                },
+                onPrivacyPolicyClick = {
+                    Toast.makeText(ctx, "Privacy Policy — coming soon", Toast.LENGTH_SHORT).show()
+                },
+                onTermsClick = {
+                    Toast.makeText(ctx, "Terms of Service — coming soon", Toast.LENGTH_SHORT).show()
+                },
+                onRateAppClick = {
+                    Toast.makeText(ctx, "Rate the app — coming soon", Toast.LENGTH_SHORT).show()
                 }
             )
         }
