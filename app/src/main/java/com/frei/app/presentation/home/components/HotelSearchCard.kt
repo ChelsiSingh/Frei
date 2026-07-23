@@ -80,7 +80,7 @@ fun HotelSearchCard(
     val dateFormatter = remember { SimpleDateFormat("dd MMM", Locale.getDefault()) }
     val checkInString = dateRangeState.selectedStartDateMillis?.let { dateFormatter.format(Date(it)) } ?: "Select"
     val checkOutString = dateRangeState.selectedEndDateMillis?.let { dateFormatter.format(Date(it)) } ?: "Select"
-    var guestCount by remember { mutableIntStateOf(2) }
+    var guestCount by remember { mutableIntStateOf(1) }
     var showGuestDropdown by remember { mutableStateOf(false) }
     val canSearch = cityId != null &&
             dateRangeState.selectedStartDateMillis != null &&

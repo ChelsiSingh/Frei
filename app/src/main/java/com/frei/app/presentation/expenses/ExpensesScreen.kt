@@ -76,6 +76,10 @@ import com.frei.app.data.model.Expense
 import com.frei.app.data.model.ExpenseCategory
 import com.frei.app.data.model.ExpenseSource
 import com.frei.app.data.model.TripExpenseGroup
+import com.frei.app.presentation.auth.AuthGateBottomSheet
+import com.frei.app.presentation.auth.AuthPromptDialog
+import com.frei.app.presentation.auth.rememberAuthGateState
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 import java.util.Locale
@@ -144,6 +148,8 @@ fun ExpensesScreen(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val context = LocalContext.current
 
+    val authGate = rememberAuthGateState { FirebaseAuth.getInstance().currentUser }
+
     Box(modifier = Modifier.fillMaxSize()) {
         ExpensesScreenContent(
             uiState = uiState,
@@ -188,24 +194,26 @@ fun ExpensesScreen(
             AddExpenseSheetContent(
                 tripOptions = tripOptions,
                 onSave = { title, category, amount, tripId, tripName ->
-                    viewModel.addManualExpense(
-                        title = title,
-                        category = category,
-                        amount = amount,
-                        tripId = tripId,
-                        tripName = tripName,
-                        onResult = { result ->
-                            result.onSuccess {
-                                showAddSheet = false
-                            }.onFailure { error ->
-                                Toast.makeText(
-                                    context,
-                                    error.message ?: "Couldn't save the expense. Please try again.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                    authGate.requireAuth {
+                        viewModel.addManualExpense(
+                            title = title,
+                            category = category,
+                            amount = amount,
+                            tripId = tripId,
+                            tripName = tripName,
+                            onResult = { result ->
+                                result.onSuccess {
+                                    showAddSheet = false
+                                }.onFailure { error ->
+                                    Toast.makeText(
+                                        context,
+                                        error.message ?: "Couldn't save the expense. Please try again.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 },
                 onCancel = { showAddSheet = false }
             )
@@ -232,6 +240,20 @@ fun ExpensesScreen(
                 )
             },
             onDismiss = { showBudgetDialog = false }
+        )
+    }
+
+    if (authGate.showPrompt) {
+        AuthPromptDialog(
+            onLoginClick = authGate::onLoginClicked,
+            onDismiss = authGate::dismiss
+        )
+    }
+
+    if (authGate.showAuthSheet) {
+        AuthGateBottomSheet(
+            onDismiss = authGate::dismiss,
+            onAuthSuccess = authGate::onAuthSuccess
         )
     }
 }
@@ -371,7 +393,7 @@ private fun TopBar(tripCount: Int, onBackClick: () -> Unit, onFilterClick: () ->
         ) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = FreiExpenseColors.Ink)
         }
-        Column(modifier = Modifier.weight(1f).padding(start = 4.dp)) {
+        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
             Text("Expenses", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = FreiExpenseColors.Ink)
             Text(
                 "$tripCount trips this month",

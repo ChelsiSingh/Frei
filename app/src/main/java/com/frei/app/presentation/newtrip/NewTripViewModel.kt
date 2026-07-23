@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class NewTripViewModel @Inject constructor(
-    private val tripRepository: TripRepository // ✅ Injected Repository
+    private val tripRepository: TripRepository
 ) : ViewModel() {
 
 

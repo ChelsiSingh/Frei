@@ -2,7 +2,6 @@ package com.frei.app.presentation.mybookings
 
 import com.frei.app.data.repository.FlightBookingRecord
 import com.frei.app.data.repository.HotelBookingRecord
-import com.frei.app.presentation.mybookings.*
 import java.text.NumberFormat
 import java.time.Duration
 import java.time.Instant
@@ -11,9 +10,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Currency
 import java.util.Locale
 
-// ============================================================
 // Shared formatting helpers
-// ============================================================
 
 private fun parseIsoInstant(raw: String): Instant? = runCatching { Instant.parse(raw) }.getOrNull()
 
@@ -33,8 +30,6 @@ private fun formatDateTime(raw: String): String {
     return if (date == "—" || time == "—") "—" else "$date, $time"
 }
 
-/** Conventional "boarding ~45 min before departure" estimate. Not authoritative — replace with
- *  the real boarding time once you have a check-in/airline data source. */
 private fun estimateBoardingTime(departureRaw: String): String =
     parseIsoInstant(departureRaw)?.let {
         DateTimeFormatter.ofPattern("HH:mm", Locale.ENGLISH)
@@ -55,27 +50,14 @@ private fun formatMoney(amount: Double, currencyCode: String): String = runCatch
     }.format(amount)
 }.getOrElse { "₹%.2f".format(amount) }
 
-/** Short, stable reference derived from the Razorpay payment id (falls back to another
- *  unique field). Swap for a real airline PNR once/if you have one. */
 private fun shortRef(paymentId: String, fallback: String): String =
     paymentId.ifBlank { fallback }.takeLast(6).uppercase().ifBlank { "N/A" }
 
 fun generateInvoiceNumber(prefix: String, uniqueSeed: String): String =
     "FRI-$prefix-${uniqueSeed.ifBlank { "000000" }.takeLast(6).uppercase()}"
 
-// ============================================================
 // Flight
-// ============================================================
 
-/**
- * NOTE: FlightBookingRecord doesn't currently store gate, terminal, boarding group,
- * baggage allowance, city names, or a true PNR — those live with the airline at
- * check-in time, not in your booking write. Shown as "—" until you either:
- *   (a) add a check-in/PNR lookup, or
- *   (b) denormalize fromCity/toCity/durationLabel into FlightBookingRecord at write
- *       time in FlightConfirmPayViewModel, where you already have the full Flight
- *       search result to pull them from.
- */
 fun FlightBookingRecord.toBoardingPassUiState(): BoardingPassUiState = BoardingPassUiState(
     airline = airline.ifBlank { "—" },
     flightNumber = flightNumber.ifBlank { "—" },
@@ -97,12 +79,6 @@ fun FlightBookingRecord.toBoardingPassUiState(): BoardingPassUiState = BoardingP
     pnr = shortRef(razorpayPaymentId, flightId)
 )
 
-/**
- * NOTE: only the final `totalPrice` is persisted today — base fare / taxes / seat fee
- * aren't broken out in FlightBookingRecord, even though FlightConfirmPayScreen already
- * computes them client-side before payment. Consider persisting that breakdown at write
- * time for a fully itemized invoice; for now the full total is shown as one "Fare" line.
- */
 fun FlightBookingRecord.toFlightInvoiceUiState(): FlightInvoiceUiState = FlightInvoiceUiState(
     invoiceNo = generateInvoiceNumber("FL", razorpayPaymentId.ifBlank { flightId }),
     issuedOn = formatDate(Instant.ofEpochMilli(bookedAt).toString()),
@@ -125,15 +101,7 @@ fun FlightBookingRecord.toFlightInvoiceUiState(): FlightInvoiceUiState = FlightI
     transactionId = razorpayPaymentId.ifBlank { "—" }
 )
 
-// ============================================================
 // Hotel
-// ============================================================
-
-/**
- * NOTE: same caveat as flights — HotelBookingRecord stores only `totalPrice`, not a
- * room-charge/tax/fee breakdown. `roomChargePerNight` is derived by dividing totalPrice
- * by nights, which is an approximation, not a stored per-night rate.
- */
 fun HotelBookingRecord.toHotelInvoiceUiState(): HotelInvoiceUiState = HotelInvoiceUiState(
     invoiceNo = generateInvoiceNumber("HT", razorpayPaymentId.ifBlank { hotelId }),
     issuedOn = formatDate(Instant.ofEpochMilli(bookedAt).toString()),
@@ -155,12 +123,6 @@ fun HotelBookingRecord.toHotelInvoiceUiState(): HotelInvoiceUiState = HotelInvoi
     transactionId = razorpayPaymentId.ifBlank { "—" }
 )
 
-/**
- * NOTE: rating/reviewCount/bedType/check-in-time aren't captured on the booking record —
- * those belong to the property listing (Travel Advisor / hotel API), not the booking
- * write. Defaulted below; pass the real values in if you fetch the listing alongside
- * the booking.
- */
 fun HotelBookingRecord.toHotelBookingDetailsUiState(): HotelBookingDetailsUiState = HotelBookingDetailsUiState(
     hotelName = hotelName.ifBlank { "—" },
     address = address.ifBlank { "—" },
@@ -175,7 +137,7 @@ fun HotelBookingRecord.toHotelBookingDetailsUiState(): HotelBookingDetailsUiStat
     roomType = roomType.ifBlank { "—" },
     roomImageUrl = image.orEmpty(),
     guestCount = guests,
-    bedType = "—",           // TODO: not stored on the booking record
+    bedType = "—",
     nights = nights,
     amenities = defaultHotelAmenities(),
     contactName = "Front Desk",

@@ -53,10 +53,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.frei.app.data.model.flight.Flight
+import com.frei.app.presentation.auth.AuthGateBottomSheet
+import com.frei.app.presentation.auth.AuthPromptDialog
+import com.frei.app.presentation.auth.rememberAuthGateState
 import com.frei.app.presentation.booking.flight.FreiBackground
 import com.frei.app.presentation.booking.flight.FreiInk
 import com.frei.app.presentation.booking.flight.FreiPrimary
 import com.frei.app.presentation.booking.flight.FreiSubtext
+import com.google.firebase.auth.FirebaseAuth
 
 private val CardBorder = Color(0xFFF0EEF6)
 private val ChipBg = Color(0xFFF7F6FB)
@@ -76,6 +80,8 @@ fun FlightConfirmPayScreen(
     val uiState by viewModel.uiState.collectAsState()
     val activity = LocalActivity.current as Activity
     var selectedMethod by remember { mutableStateOf(PaymentMethod.WALLET) }
+
+    val authGate = rememberAuthGateState { FirebaseAuth.getInstance().currentUser }
 
     Scaffold(
         topBar = {
@@ -181,18 +187,20 @@ fun FlightConfirmPayScreen(
                             ready?.let {
                                 Button(
                                     onClick = {
-                                        viewModel.createOrder { orderId, keyId, amountPaise ->
-                                            viewModel.paymentManager.startCheckout(
-                                                activity = activity,
-                                                keyId = keyId,
-                                                orderId = orderId,
-                                                amountPaise = amountPaise,
-                                                name = "Frei",
-                                                description = "Flight booking",
-                                                prefillEmail = viewModel.guestEmail,
-                                                prefillContact = viewModel.guestPhone,
-                                                preferredMethod = selectedMethod.razorpayValue
-                                            )
+                                        authGate.requireAuth {
+                                            viewModel.createOrder { orderId, keyId, amountPaise ->
+                                                viewModel.paymentManager.startCheckout(
+                                                    activity = activity,
+                                                    keyId = keyId,
+                                                    orderId = orderId,
+                                                    amountPaise = amountPaise,
+                                                    name = "Frei",
+                                                    description = "Flight booking",
+                                                    prefillEmail = viewModel.guestEmail,
+                                                    prefillContact = viewModel.guestPhone,
+                                                    preferredMethod = selectedMethod.razorpayValue
+                                                )
+                                            }
                                         }
                                     },
                                     enabled = state !is PaymentUiState.Processing,
@@ -212,6 +220,20 @@ fun FlightConfirmPayScreen(
                 }
             }
         }
+    }
+
+    if (authGate.showPrompt) {
+        AuthPromptDialog(
+            onLoginClick = authGate::onLoginClicked,
+            onDismiss = authGate::dismiss
+        )
+    }
+
+    if (authGate.showAuthSheet) {
+        AuthGateBottomSheet(
+            onDismiss = authGate::dismiss,
+            onAuthSuccess = authGate::onAuthSuccess
+        )
     }
 }
 

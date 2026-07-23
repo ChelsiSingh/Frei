@@ -1,6 +1,5 @@
 package com.frei.app.presentation.newtrip
 
-// 🟢 FIXED: Imported hiltViewModel instead of standard architecture viewModel
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -51,7 +50,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.frei.app.presentation.auth.AuthGateBottomSheet
+import com.frei.app.presentation.auth.AuthPromptDialog
+import com.frei.app.presentation.auth.rememberAuthGateState
 import com.frei.app.presentation.booking.flight.FreiInk
+import com.google.firebase.auth.FirebaseAuth
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -73,6 +76,8 @@ fun NewTripScreen(
     val formatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
     val context = LocalContext.current
+
+    val authGate = rememberAuthGateState { FirebaseAuth.getInstance().currentUser }
 
     Scaffold(
         modifier = Modifier
@@ -97,25 +102,27 @@ fun NewTripScreen(
             Surface(shadowElevation = 8.dp) {
                 Button(
                     onClick = {
-                        viewModel.saveTripToFirestore(
-                            onSuccess = { tripId ->
+                        authGate.requireAuth {
+                            viewModel.saveTripToFirestore(
+                                onSuccess = { tripId ->
 
-                                Toast.makeText(
-                                    context,
-                                    "Trip saved successfully!",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                    Toast.makeText(
+                                        context,
+                                        "Trip saved successfully!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
 
-                                onSaveSuccess(tripId)
-                            },
-                            onFailure = {
-                                Toast.makeText(
-                                    context,
-                                    "Failed: ${it.localizedMessage}",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
-                        )
+                                    onSaveSuccess(tripId)
+                                },
+                                onFailure = {
+                                    Toast.makeText(
+                                        context,
+                                        "Failed: ${it.localizedMessage}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            )
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -265,6 +272,20 @@ fun NewTripScreen(
                 showStaySheet = false
             },
             onDismiss = { showStaySheet = false }
+        )
+    }
+
+    if (authGate.showPrompt) {
+        AuthPromptDialog(
+            onLoginClick = authGate::onLoginClicked,
+            onDismiss = authGate::dismiss
+        )
+    }
+
+    if (authGate.showAuthSheet) {
+        AuthGateBottomSheet(
+            onDismiss = authGate::dismiss,
+            onAuthSuccess = authGate::onAuthSuccess
         )
     }
 }
