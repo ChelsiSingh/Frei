@@ -1,5 +1,6 @@
 package com.frei.app.presentation.home
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.frei.app.data.repository.TripRepository
@@ -35,7 +36,10 @@ class HomeViewModel @Inject constructor(
         travelers: Int,
         budget: String,
         transport: String,
-        stay: String
+        stay: String,
+        tripType: String = "Leisure",
+        notes: String = "",
+        coverImageUri: Uri? = null
     ) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -50,13 +54,16 @@ class HomeViewModel @Inject constructor(
                 budget = budget,
                 transport = transport,
                 stay = stay,
+                tripType = tripType,
+                notes = notes,
+                coverImageUri = coverImageUri,
                 onSuccess = {
                     _isLoading.value = false
                     viewModelScope.launch {
                         _saveSuccessEvent.emit(Unit)
                     }
                 },
-                onFailure = { e -> // FIXED: Explicitly typed closure parameter
+                onFailure = { e ->
                     _isLoading.value = false
                     _errorMessage.value = e.message ?: "Failed to save trip"
                     e.printStackTrace()

@@ -1,5 +1,6 @@
 package com.frei.app.presentation.newtrip
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,6 +38,15 @@ class NewTripViewModel @Inject constructor(
         private set
 
     var stay by mutableStateOf("Hotel")
+        private set
+
+    var tripType by mutableStateOf("Leisure")
+        private set
+
+    var notes by mutableStateOf("")
+        private set
+
+    var coverImageUri by mutableStateOf<Uri?>(null)
         private set
 
 
@@ -80,6 +90,18 @@ class NewTripViewModel @Inject constructor(
         stay = selectedStay
     }
 
+    fun updateTripType(selectedType: String) {
+        tripType = selectedType
+    }
+
+    fun onNotesChange(newValue: String) {
+        notes = newValue
+    }
+
+    fun onCoverImageSelected(uri: Uri?) {
+        coverImageUri = uri
+    }
+
 
     fun saveTripToFirestore(
         onSuccess: (String) -> Unit,
@@ -95,6 +117,9 @@ class NewTripViewModel @Inject constructor(
             budget = budget,
             transport = transport,
             stay = stay,
+            tripType = tripType,
+            notes = notes,
+            coverImageUri = coverImageUri,
             onSuccess = { generatedTripId ->
                 onSuccess(generatedTripId)
             },

@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.ui)
     implementation(libs.material)
+    implementation("io.coil-kt:coil-compose:2.6.0")
 
     // Testing
     testImplementation(libs.junit)
@@ -89,6 +90,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
 
     // Hilt Dependency Injection
     implementation(libs.hilt.android)

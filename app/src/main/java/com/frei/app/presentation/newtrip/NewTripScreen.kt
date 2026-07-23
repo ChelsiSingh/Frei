@@ -1,6 +1,8 @@
 package com.frei.app.presentation.newtrip
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,13 +26,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Hotel
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Luggage
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,11 +51,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import com.frei.app.presentation.auth.AuthGateBottomSheet
 import com.frei.app.presentation.auth.AuthPromptDialog
 import com.frei.app.presentation.auth.rememberAuthGateState
@@ -60,6 +70,8 @@ import java.util.Date
 import java.util.Locale
 
 private val Purple = Color(0xFF6C3CF0)
+
+private val tripTypeOptions = listOf("Leisure", "Business", "Adventure", "Family")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,12 +84,19 @@ fun NewTripScreen(
     var showStaySheet by remember { mutableStateOf(false) }
     var showDeparturePicker by remember { mutableStateOf(false) }
     var showReturnPicker by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
 
     val formatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
     val context = LocalContext.current
 
     val authGate = rememberAuthGateState { FirebaseAuth.getInstance().currentUser }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        viewModel.onCoverImageSelected(uri)
+    }
 
     Scaffold(
         modifier = Modifier
@@ -103,9 +122,10 @@ fun NewTripScreen(
                 Button(
                     onClick = {
                         authGate.requireAuth {
+                            isSaving = true
                             viewModel.saveTripToFirestore(
                                 onSuccess = { tripId ->
-
+                                    isSaving = false
                                     Toast.makeText(
                                         context,
                                         "Trip saved successfully!",
@@ -115,6 +135,7 @@ fun NewTripScreen(
                                     onSaveSuccess(tripId)
                                 },
                                 onFailure = {
+                                    isSaving = false
                                     Toast.makeText(
                                         context,
                                         "Failed: ${it.localizedMessage}",
@@ -129,9 +150,9 @@ fun NewTripScreen(
                         .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Purple),
-                    enabled = viewModel.tripName.isNotBlank()
+                    enabled = viewModel.tripName.isNotBlank() && !isSaving
                 ) {
-                    Text("Save Trip")
+                    Text(if (isSaving) "Saving..." else "Save Trip")
                 }
             }
         }
@@ -144,6 +165,11 @@ fun NewTripScreen(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            CoverPhotoPicker(
+                imageUri = viewModel.coverImageUri,
+                onClick = { imagePickerLauncher.launch("image/*") }
+            )
+
             TripInputField(
                 label = "Trip Name",
                 value = viewModel.tripName,
@@ -238,6 +264,25 @@ fun NewTripScreen(
                 }
             )
 
+            TripTypeDropdown(
+                selected = viewModel.tripType,
+                options = tripTypeOptions,
+                onSelect = viewModel::updateTripType
+            )
+
+            OutlinedTextField(
+                value = viewModel.notes,
+                onValueChange = viewModel::onNotesChange,
+                label = { Text("Notes (Optional)") },
+                minLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Purple,
+                    focusedLabelColor = Purple
+                )
+            )
+
             Spacer(modifier = Modifier.height(90.dp))
         }
     }
@@ -287,6 +332,109 @@ fun NewTripScreen(
             onDismiss = authGate::dismiss,
             onAuthSuccess = authGate::onAuthSuccess
         )
+    }
+}
+
+@Composable
+private fun CoverPhotoPicker(
+    imageUri: android.net.Uri?,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .then(
+                if (imageUri == null) {
+                    Modifier.dashedBorder(
+                        color = Purple,
+                        cornerRadiusDp = 16.dp
+                    )
+                } else Modifier
+            )
+            .background(if (imageUri == null) Purple.copy(alpha = 0.04f) else Color.Transparent)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageUri != null) {
+            AsyncImage(
+                model = imageUri,
+                contentDescription = "Trip cover photo",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = null,
+                    tint = Purple
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Add Cover Photo",
+                    color = Purple,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+/** Simple dashed-border modifier used for the empty cover-photo placeholder. */
+private fun Modifier.dashedBorder(color: Color, cornerRadiusDp: androidx.compose.ui.unit.Dp) = this.then(
+    Modifier.border(
+        width = 1.5.dp,
+        color = color,
+        shape = RoundedCornerShape(cornerRadiusDp)
+    )
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TripTypeDropdown(
+    selected: String,
+    options: List<String>,
+    onSelect: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        OutlinedTextField(
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Trip Type") },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+            shape = RoundedCornerShape(20.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Purple,
+                focusedLabelColor = Purple,
+                focusedTrailingIconColor = Purple
+            )
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        onSelect(option)
+                        expanded = false
+                    }
+                )
+            }
+        }
     }
 }
 

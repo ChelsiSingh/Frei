@@ -10,5 +10,8 @@ data class Trip(
     val travelers: Int = 1,
     val budget: String = "",
     val transport: String = "Flight",
-    val stay: String = "Hotel"
+    val stay: String = "Hotel",
+    val coverImageUrl: String? = null,
+    val tripType: String = "Leisure",
+    val notes: String = ""
 )
