@@ -135,16 +135,16 @@ fun AboutAppScreen(
 
             Spacer(Modifier.height(28.dp))
 
-            AboutSectionCard(title = "About this app") {
-                Text(
-                    "Frei is a travel companion built to make planning trips " +
-                            "simpler — search and book flights and hotels, track " +
-                            "your travel expenses, and keep every trip organized " +
-                            "in one app.",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = FreiInkSoft,
-                    lineHeight = 19.sp
+
+            Text(
+                "Frei is a travel companion built to make planning trips " +
+                        "simpler — search and book flights and hotels, track " +
+                        "your travel expenses, and keep every trip organized " +
+                        "in one app.",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = FreiInkSoft,
+                lineHeight = 19.sp
                 )
             }
 
@@ -208,7 +208,7 @@ fun AboutAppScreen(
             Spacer(Modifier.height(28.dp))
         }
     }
-}
+
 
 @Composable
 private fun AppLogoBadge() {

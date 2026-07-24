@@ -22,7 +22,24 @@ sealed class Screen(val route: String) {
         data object Profile : Screen("profile")
         data object AboutApp : Screen("aboutApp")
         data object ContactUs : Screen("contactUs")
-
+        data object TripCreated : Screen(
+                "trip_created/{tripId}/{tripName}/{tripDate}/{tripDestination}/{tripOrigin}?travelers={travelers}"
+        ) {
+                fun createRoute(
+                        tripId: String,
+                        tripName: String,
+                        tripDate: String,
+                        tripDestination: String,
+                        tripOrigin: String,
+                        travelers: Int = 1
+                ): String {
+                        val encodedName = java.net.URLEncoder.encode(tripName, "UTF-8")
+                        val encodedDate = java.net.URLEncoder.encode(tripDate, "UTF-8")
+                        val encodedDestination = java.net.URLEncoder.encode(tripDestination, "UTF-8")
+                        val encodedOrigin = java.net.URLEncoder.encode(tripOrigin, "UTF-8")
+                        return "trip_created/$tripId/$encodedName/$encodedDate/$encodedDestination/$encodedOrigin?travelers=$travelers"
+                }
+        }
         data object Notifications : Screen("notifications")
         data object Splash : Screen("splash")
 

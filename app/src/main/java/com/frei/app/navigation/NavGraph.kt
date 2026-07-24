@@ -42,6 +42,7 @@ import com.frei.app.presentation.mybookings.HotelInvoiceViewModel
 import com.frei.app.presentation.mytrips.MyTripScreen
 import com.frei.app.presentation.mytrips.TripsDashboardScreen
 import com.frei.app.presentation.newtrip.NewTripScreen
+import com.frei.app.presentation.newtrip.TripCreatedScreen
 import com.frei.app.presentation.notification.NotificationsScreen
 import com.frei.app.presentation.packing.PackingDashboardScreen
 import com.frei.app.presentation.packing.PackingScreen
@@ -115,14 +116,58 @@ fun FreiNavGraph() {
 
         composable(Screen.NewTrip.route) {
             NewTripScreen(
-                onBackClick = {
-                    navController.popBackStack()
-                },
-                onSaveSuccess = { _ ->
-                    navController.navigate(Screen.Home.route) {
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = { tripId, tripName, destination, departureDate, returnDate, travelers ->
+                    val formatter = java.text.SimpleDateFormat("dd MMM", java.util.Locale.getDefault())
+                    val dateRange = when {
+                        departureDate != null && returnDate != null ->
+                            "${formatter.format(java.util.Date(departureDate))} - ${formatter.format(java.util.Date(returnDate))}"
+                        departureDate != null -> formatter.format(java.util.Date(departureDate))
+                        else -> "Dates TBD"
+                    }
+
+                    navController.navigate(
+                        Screen.TripCreated.createRoute(
+                            tripId = tripId,
+                            tripName = tripName,
+                            tripDate = dateRange,
+                            tripDestination = destination,
+                            tripOrigin = "",
+                            travelers = travelers
+                        )
+                    ) {
                         popUpTo(Screen.NewTrip.route) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(
+            route = Screen.TripCreated.route,
+            arguments = listOf(
+                navArgument("tripId") { type = NavType.StringType },
+                navArgument("tripName") { type = NavType.StringType },
+                navArgument("tripDate") { type = NavType.StringType },
+                navArgument("tripDestination") { type = NavType.StringType },
+                navArgument("tripOrigin") { type = NavType.StringType },
+                navArgument("travelers") { type = NavType.IntType; defaultValue = 1 }
+            )
+        ) { backStackEntry ->
+            fun decode(v: String?) = java.net.URLDecoder.decode(v.orEmpty(), "UTF-8")
+
+            val tripId = backStackEntry.arguments?.getString("tripId").orEmpty()
+            val tripName = decode(backStackEntry.arguments?.getString("tripName"))
+            val tripDate = decode(backStackEntry.arguments?.getString("tripDate"))
+            val travelers = backStackEntry.arguments?.getInt("travelers") ?: 1
+
+            TripCreatedScreen(
+                tripName = tripName,
+                tripId = tripId,
+                dateRange = tripDate,
+                travelers = travelers,
+                onBackClick = { navController.popBackStack() },
+                onAddBookingsClick = { navController.navigate(Screen.Home.route) },
+                onGoToTripClick = { navController.navigate(Screen.MyTrips.createRoute(tripId)) }
             )
         }
 

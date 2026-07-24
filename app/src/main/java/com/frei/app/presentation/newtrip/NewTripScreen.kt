@@ -76,11 +76,18 @@ private val tripTypeOptions = listOf("Leisure", "Business", "Adventure", "Family
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NewTripScreen(
-
     viewModel: NewTripViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {},
-    onSaveSuccess: (String) -> Unit = {}
-){
+    onSaveSuccess: (
+        tripId: String,
+        tripName: String,
+        destination: String,
+        departureDate: Long?,
+        returnDate: Long?,
+        travelers: Int
+    ) -> Unit = { _, _, _, _, _, _ -> }
+) {
+
     var showStaySheet by remember { mutableStateOf(false) }
     var showDeparturePicker by remember { mutableStateOf(false) }
     var showReturnPicker by remember { mutableStateOf(false) }
@@ -126,21 +133,19 @@ fun NewTripScreen(
                             viewModel.saveTripToFirestore(
                                 onSuccess = { tripId ->
                                     isSaving = false
-                                    Toast.makeText(
-                                        context,
-                                        "Trip saved successfully!",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-
-                                    onSaveSuccess(tripId)
+                                    Toast.makeText(context, "Trip saved successfully!", Toast.LENGTH_SHORT).show()
+                                    onSaveSuccess(
+                                        tripId,
+                                        viewModel.tripName,
+                                        viewModel.destination,
+                                        viewModel.departureDate,
+                                        viewModel.returnDate,
+                                        viewModel.travelers
+                                    )
                                 },
                                 onFailure = {
                                     isSaving = false
-                                    Toast.makeText(
-                                        context,
-                                        "Failed: ${it.localizedMessage}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                    Toast.makeText(context, "Failed: ${it.localizedMessage}", Toast.LENGTH_LONG).show()
                                 }
                             )
                         }
